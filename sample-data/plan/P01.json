@@ -1,0 +1,26 @@
+{
+ "pieces": [
+  {
+   "id": "e1",
+   "text": "List the 3 main findings as bullet points",
+   "stage": 3,
+   "done": false,
+   "by": "me"
+  },
+  {
+   "id": "e2",
+   "text": "Make Table 2 from the analysis output",
+   "stage": 3,
+   "done": false,
+   "by": "me"
+  },
+  {
+   "id": "e3",
+   "text": "Draft 150 words describing the sample",
+   "stage": 5,
+   "done": false,
+   "by": "me"
+  }
+ ],
+ "updatedAt": "2026-01-01T00:00:00.000Z"
+}

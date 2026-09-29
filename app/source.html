@@ -1,0 +1,844 @@
+<title>Paper Progress Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@500;600;700&family=Source+Sans+3:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F3F5F6; --surface:#FFFFFF; --sunk:#E9EDEF; --line:#D5DCE0; --ink:#15202B; --ink2:#4A5763; --ink3:#6B7883;
+  --accent:#2446C7; --accent-soft:#E3E9FB; --on-accent:#fff;
+  --done:#2F8F5B; --done-soft:#D5EEDF; --done-ink:#1E6B41;
+  --half:#C98A0C; --half-soft:#FBEBC6; --half-ink:#7F5300;
+  --warn:#B4432F; --warn-soft:#F8DDD6;
+  --p1:#9FB3EC; --p2:#8CCBA5; --p3:#E9AE86;
+  --display:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0F151B; --surface:#172029; --sunk:#1E2A34; --line:#2C3A46; --ink:#E6ECF0; --ink2:#A9B6C0; --ink3:#8795A0;
+    --accent:#8AA4FF; --accent-soft:#1F2B55; --on-accent:#0F151B;
+    --done:#5CC48A; --done-soft:#1C3A2A; --done-ink:#8EE0B0;
+    --half:#E7B24A; --half-soft:#3F3217; --half-ink:#F2CB7A;
+    --warn:#F08A74; --warn-soft:#44221B;
+    --p1:#4A5E9E; --p2:#3F7D58; --p3:#9A6445;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F151B; --surface:#172029; --sunk:#1E2A34; --line:#2C3A46; --ink:#E6ECF0; --ink2:#A9B6C0; --ink3:#8795A0;
+  --accent:#8AA4FF; --accent-soft:#1F2B55; --on-accent:#0F151B;
+  --done:#5CC48A; --done-soft:#1C3A2A; --done-ink:#8EE0B0;
+  --half:#E7B24A; --half-soft:#3F3217; --half-ink:#F2CB7A;
+  --warn:#F08A74; --warn-soft:#44221B;
+  --p1:#4A5E9E; --p2:#3F7D58; --p3:#9A6445;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.4}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:14px 48px;display:flex;flex-direction:column;gap:12px}
+button{font:inherit;cursor:pointer;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+.top{display:flex;align-items:baseline;gap:6px 14px;flex-wrap:wrap}
+.top h1{font-family:var(--display);font-size:20px;margin:0}
+.top .meta{font-size:13px;color:var(--ink3)}
+
+.group{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.ghead{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 12px;font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);background:var(--sunk);font-weight:600;border-radius:8px 8px 0 0}
+.ghead .phases{display:flex;gap:8px;font-size:10px;letter-spacing:.05em;text-transform:none}
+.ghead .phases i{display:inline-block;width:10px;height:3px;border-radius:2px;vertical-align:middle;margin-right:4px}
+.sub{padding:5px 12px 3px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);border-top:1px solid var(--line)}
+
+.line{display:grid;grid-template-columns:28px minmax(200px,1fr) auto 38px minmax(0,230px) auto;align-items:center;gap:10px;padding:6px 12px;border-top:1px solid var(--line)}
+.ghead+.line,.sub+.line{border-top:none}
+.mark{display:flex;align-items:center;gap:2px;font-size:12px;color:var(--ink3)}
+.grip{border:0;background:none;padding:2px 1px;color:var(--ink3);font-size:15px;line-height:1;cursor:grab;touch-action:none;border-radius:4px}
+.grip:hover{color:var(--accent);background:var(--accent-soft)}
+.group.focusblk{border:2px solid var(--accent)}
+.group.focusblk .ghead{background:var(--accent-soft);color:var(--accent)}
+.zone{min-height:6px}
+body.dragging-now .zone{min-height:44px}
+@media (pointer:coarse){.grip{min-width:36px;min-height:36px;font-size:20px;-webkit-touch-callout:none;-webkit-user-select:none}}
+.zhint{padding:8px 12px;font-size:13px;color:var(--ink3);border-top:1px dashed var(--line)}
+.line.dragging{position:fixed;z-index:30;background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.2);border:1px solid var(--accent);border-radius:8px;pointer-events:none;opacity:.96}
+.ph{margin:4px 10px;border:2px dashed var(--accent);background:var(--accent-soft);border-radius:8px}
+body.dragging-now{user-select:none;cursor:grabbing}
+.mark i{width:8px;height:8px;border-radius:50%;border:1.5px solid var(--ink3);flex:none}
+.mark.focus i{background:var(--accent);border-color:var(--accent)} .mark.focus{color:var(--accent);font-weight:600}
+.mark.warm i{border-color:var(--accent)}
+.tcell{min-width:0;display:flex;flex-direction:column;gap:1px}
+.trow{display:flex;align-items:center;gap:6px;min-width:0}
+.ttl{border:0;background:none;padding:0;text-align:left;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.ttl:hover{text-decoration:underline;text-decoration-color:var(--ink3)}
+.role{flex:none;font-size:11px;line-height:1;padding:4px 7px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink2);white-space:nowrap}
+.role.main{background:var(--accent-soft);border-color:transparent;color:var(--accent);font-weight:600}
+.role.unsure{border-style:dashed}
+.role:hover{border-color:var(--ink3)}
+.folder{font-family:var(--mono);font-size:11px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:0;background:none;padding:0;text-align:left;max-width:100%;cursor:pointer}
+.folder::before{content:"";display:inline-block;width:11px;height:8px;margin-right:5px;border:1.5px solid currentColor;border-radius:1px 2px 2px 2px;vertical-align:-1px}
+.folder:hover{color:var(--accent);text-decoration:underline}
+.folderbtns{display:flex;gap:6px;flex-wrap:wrap}
+.where{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap;row-gap:4px}
+.where .folder{flex:0 1 auto;min-width:0}
+.lnk{flex:none;max-width:100%;overflow:hidden;text-overflow:ellipsis;font-size:11px;line-height:1;padding:3px 6px;border-radius:4px;border:1px solid var(--line);background:var(--surface);color:var(--accent);text-decoration:none;white-space:nowrap;cursor:pointer}
+.lnk:hover{border-color:var(--accent)}
+.links{display:flex;flex-direction:column;gap:4px}
+.linkrow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13.5px}
+.linkrow .u{font-family:var(--mono);font-size:11.5px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.folder.bad{color:var(--warn)}
+.strip{display:flex;gap:2px;align-items:center}
+.strip .gap{width:5px;flex:none}
+.cell{width:20px;height:20px;border-radius:4px;border:1px solid var(--line);background:var(--sunk);display:grid;place-items:center;font-size:11px;padding:0;color:transparent;position:relative;flex:none}
+.cell::after{content:"";position:absolute;left:3px;right:3px;bottom:-4px;height:2px;border-radius:1px;background:var(--pc)}
+.cell.p1{--pc:var(--p1)} .cell.p2{--pc:var(--p2)} .cell.p3{--pc:var(--p3)}
+.cell.v1{background:var(--done);border-color:var(--done);color:#fff}
+.cell.v5{background:var(--half-soft);border-color:var(--half);color:var(--half-ink)}
+.cell.hint{box-shadow:0 0 0 2px var(--half)}
+.pct{font-size:13px;color:var(--ink2);text-align:right}
+.now{font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.go{display:flex;align-items:center;gap:6px;width:100%;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:3px 8px 3px 4px;font-size:13px;text-align:left}
+.go:hover{border-color:var(--accent)}
+.go:focus-visible{outline-offset:-2px}
+.go i{flex:none;font-style:normal;font-size:11px;font-weight:600;color:var(--on-accent);background:var(--accent);border-radius:4px;padding:2px 5px}
+.go span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.go.on{border-color:var(--accent);background:var(--accent-soft)}
+.now b{color:var(--ink);font-weight:500}
+.now .late{color:var(--warn)}
+.acts{display:flex;gap:4px;justify-content:flex-end}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:4px 10px;font-size:13px;white-space:nowrap}
+.btn:hover{border-color:var(--ink3)}
+.btn.ok{border-color:var(--done);color:var(--done-ink);font-weight:600}
+.btn.ok:hover{background:var(--done-soft)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.x{padding:4px 8px;color:var(--ink3)}
+.empty{padding:14px 12px;color:var(--ink3);font-size:14px}
+.foot{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;font-size:13px;color:var(--ink3)}
+.foot .cell{display:inline-grid;width:14px;height:14px;font-size:9px;vertical-align:-2px;margin-right:3px}
+.foot .cell::after{display:none}
+.linkbtn{border:0;background:none;color:var(--accent);padding:0;font-size:13px}
+.newf{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;padding:8px 12px;border-top:1px solid var(--line)}
+.newf:first-child{border-top:none}
+.newf code{font-family:var(--mono);font-size:12px;background:var(--sunk);padding:1px 6px;border-radius:4px;word-break:break-all}
+details.arch>summary{list-style:none;cursor:pointer}
+details.arch>summary::-webkit-details-marker{display:none}
+details.arch:not([open])>summary{border-radius:8px}
+.archrow{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:6px 12px;border-top:1px solid var(--line);font-size:14px}
+.settings{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:8px;padding:10px 12px}
+
+@media (max-width:900px){
+  .line{grid-template-columns:22px minmax(0,1fr) auto auto;row-gap:6px;padding:8px 10px}
+  .line .mark{grid-column:1;grid-row:1 / span 3;align-self:start}
+  .line .mark .num{display:none}
+  .line .tcell{grid-column:2;grid-row:1}
+  .line .pct{grid-column:3;grid-row:1}
+  .line .acts{grid-column:4;grid-row:1}
+  .line .strip{grid-column:2 / -1;grid-row:2}
+  .line .strip .cell{flex:1 1 0;min-width:0;width:auto;height:28px}
+  .line .now{grid-column:2 / -1;grid-row:3}
+  .line .now.plain{display:none}
+  .ghead .phases{display:none}
+}
+@media (pointer:coarse) and (max-width:900px){.line{grid-template-columns:36px minmax(0,1fr) auto auto}}
+@media (max-width:560px){
+  .line{grid-template-columns:24px minmax(0,1fr) auto}
+  .line .mark{grid-row:1 / span 3}
+  .line .tcell{grid-column:2;grid-row:1}
+  .line .pct{grid-column:3;grid-row:1}
+  .line .strip{grid-column:2 / -1;grid-row:2}
+  .line .now{grid-column:2;grid-row:3}
+  .line .acts{grid-column:3;grid-row:3}
+  .trow{flex-wrap:wrap;row-gap:2px}
+}
+@media (pointer:coarse) and (max-width:560px){.line{grid-template-columns:36px minmax(0,1fr) auto}}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,15,20,.35);z-index:10}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(520px,100%);background:var(--surface);border-left:1px solid var(--line);z-index:11;overflow-y:auto;padding:calc(16px + env(safe-area-inset-top,0px)) 18px calc(32px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+.drawer header{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.drawer h2{font-family:var(--display);font-size:18px;margin:0;text-wrap:balance}
+.drawer h3{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:0;font-weight:600}
+.sec{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--line);padding-top:12px}
+.stages{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+.stagebtn{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg);border-radius:6px;padding:4px 8px;font-size:13px;text-align:left}
+.stagebtn .cell::after{display:none}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:460px){.grid2,.stages{grid-template-columns:1fr}}
+label{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--ink3)}
+label.inline{flex-direction:row;align-items:center;gap:8px;font-size:14px;color:var(--ink)}
+input,select,textarea{font:inherit;font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;width:100%}
+input[type=checkbox]{width:auto}
+textarea{resize:vertical;min-height:54px}
+.know{font-size:14px;color:var(--ink);display:flex;flex-direction:column;gap:6px}
+.know p{margin:0}
+.know .k{font-size:12px;color:var(--ink3);display:block}
+.know .num{font-size:12.5px}
+.know .src{font-size:12px;color:var(--ink3)}
+.me{font-weight:600;color:var(--accent)}
+.note{background:var(--half-soft);color:var(--half-ink);border-radius:6px;padding:6px 8px;font-size:13px}
+.note.bad{background:var(--warn-soft);color:var(--warn)}
+.sugg{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:13.5px}
+.sugg span{flex:1 1 200px}
+details>summary{cursor:pointer;font-size:13px;color:var(--ink2)}
+
+/* toast + cheer */
+.pieces{display:flex;flex-direction:column;gap:4px}
+.venues{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px;font-size:14px}
+.venues li>div{margin-top:2px}
+.piece{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;gap:6px;align-items:center;font-size:14px;padding:3px 0}
+.piece input{width:18px;height:18px;margin:0}
+.piece.done span{color:var(--ink3);text-decoration:line-through}
+.piece .stg{font-size:11px;color:var(--ink3)}
+.addpiece{display:flex;gap:6px}
+.coach{font-size:12.5px;color:var(--ink3);min-height:17px}
+.coach.bad{color:var(--half-ink)} .coach.good{color:var(--done-ink)}
+.timer{position:fixed;left:0;right:0;bottom:0;z-index:15;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 18px rgba(0,0,0,.08);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.timer .in{max-width:1120px;margin:0 auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.timer .clock{font-family:var(--mono);font-size:26px;font-variant-numeric:tabular-nums;min-width:92px}
+.timer .what{flex:1 1 220px;min-width:0;font-size:14px}
+.timer .what small{display:block;font-size:12px;color:var(--ink3)}
+.timer .bar{position:absolute;left:0;top:-1px;height:3px;background:var(--accent)}
+.timer.brk .bar{background:var(--done)}
+body.timing .wrap{padding-bottom:calc(var(--timer-h,120px) + 16px)}
+body.timing .toast{bottom:calc(var(--timer-h,120px) + 10px)}
+body.timing .drawer{padding-bottom:calc(var(--timer-h,120px) + 24px)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:8px 8px 8px 14px;border-radius:10px;font-size:14px;z-index:20;display:flex;gap:10px;align-items:flex-start;width:max-content;max-width:min(520px,calc(100% - 32px));box-shadow:0 6px 24px rgba(0,0,0,.18)}
+.toast .msg{display:flex;flex-direction:column;gap:3px;padding-top:2px}
+.toast .fact{font-weight:600}
+.toast .cheer{opacity:.92;line-height:1.45}
+.toast button{border:0;background:transparent;color:var(--bg);font-weight:600;text-decoration:underline;padding:2px 6px;flex:none}
+.toast button.close{text-decoration:none;opacity:.7}
+@media (prefers-reduced-motion:no-preference){
+  .drawer{animation:slide .16s ease-out}@keyframes slide{from{transform:translateX(20px);opacity:.6}to{transform:none;opacity:1}}
+  .toast{animation:rise .22s ease-out}@keyframes rise{from{transform:translate(-50%,10px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+  .cell.pop{animation:pop .35s ease-out}@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+}
+</style>
+
+<div class="wrap">
+  <div class="top"><h1>Paper Progress Tracker</h1><span class="meta" id="meta">Loading your papers…</span><button class="btn primary" id="quick25" style="margin-left:auto">▶ 25 min</button></div>
+  <div id="groups"></div>
+  <div class="foot">
+    <span><i class="cell v1">✔</i>done</span><span><i class="cell v5">◐</i>partly</span><span><i class="cell hint"></i>your folders suggest this</span>
+    <span>Tap a square to mark it. Tap a title for details.</span>
+    <button class="linkbtn" id="addPaper">Add paper</button>
+    <button class="linkbtn" id="toggleSettings">Default order and sources</button>
+  </div>
+  <div class="group" id="settingsBox" hidden><div class="ghead">Default order for papers you have not dragged yet</div><div class="settings" id="settings"></div></div>
+</div>
+<div id="drawerRoot"></div>
+<div id="timerRoot"></div>
+<div id="toastRoot" aria-live="polite"></div>
+
+<script>
+const STAGES=[["Idea & RQs",5,1],["Literature",10,1],["Data",10,1],["Analysis",15,1],["Intro",5,2],["Method",5,2],["Results",10,2],["Discussion",10,2],["Abstract, refs, format",5,2],["Co-author sign-off",5,2],["Submitted",5,3],["Revision (R&R)",10,3],["Accepted",5,3]];
+const SUB=10,REV=11,ACC=12;
+const DEFAULTS={progress:40,d14:30,d30:22,d60:12,d120:6,selfMult:0.5,rr:25,venue:5,quick2:10,quick4:5,focusSlots:3,warmSlots:2,ignoredFolders:[]};
+const SETTING_LABELS=[["progress","Points for a 100% paper"],["rr","Revising (R&R) bonus"],["d14","Deadline within 14 days"],["d30","Within 30 days"],["d60","Within 60 days"],["d120","Within 120 days"],["selfMult","Self-set deadline multiplier"],["venue","Points per venue level (1-3)"],["quick2","Quick win, 2 weeks or less"],["quick4","Quick win, 4 weeks or less"]];
+/* Encouragement bank, keyed by stage. Filled from verified research, see ENC_SOURCES. */
+const ENC={"Idea & RQs": ["Settling on questions you can actually answer is quiet work that rarely looks like progress from outside. It is progress, and everything else in this paper now has something to aim at.", "Turning a broad interest into focused questions means deciding what to leave out, and you made those calls. The reading ahead now has a filter.", "The first real piece of this paper exists where there was only an idea before. Every stage from here builds on what you just settled.", "With the questions set, the literature has a clear brief. When you next open this paper, you could note the few sources each question cannot do without."], "Literature": ["The reading is done and the gap this paper speaks to is written down. That is some of the slowest groundwork in research, and it is behind you.", "Sorting which studies matter and how they speak to each other is thinking, not only reading. The stages ahead get to stand on that work.", "Breaking a paper into stages is what lets a day like this count. The literature is mapped, and the data stage now knows what it needs to capture.", "Literature work rarely moves in tidy daily steps, and whatever rhythm got it done worked. The map of what is already known is finished, and that is worth feeling good about."], "Data": ["Data depend on consent, access and other people's calendars, and all of that is now behind this paper. It rests on something real.", "This dataset exists because participants and colleagues gave their time. A quiet word of thanks to them is a lovely way to mark the day.", "The dataset is ready and the analysis has material to work with. A short first session is plenty, simply opening the file and checking the variables look as expected.", "Questions, reading and now data are in place, so the foundation of this study is laid. The analysis gets to start from solid ground."], "Analysis": ["The analysis is where all the preparation turns into answers. You now know what this study found, and every section still to come draws on exactly that.", "Analysis means many small choices about models, checks and what counts as a finding, and you worked through them. This paper has results to report.", "Analysis rarely runs in a straight line, with reruns and dead ends along the way. Reaching stable results is what matters, and you are there.", "With findings in hand, the writing has its raw material. Next session, you could write the main results as plain sentences before touching any section."], "Intro": ["The introduction now makes the case for why this study matters, the question every reader brings. The whole argument has its frame.", "Framing a problem so a busy reader cares usually means redrafting the same few paragraphs. You made the choices about what to put first, and they are on the page.", "A good share of this paper now exists in draft, and the introduction gives it a front door. That is a lot of work already standing.", "Introductions often take several passes, and this one is done for now. The method comes next, and it can start with a brief sitting."], "Method": ["Sample, measures and procedure are now written in a form a reviewer can check. Anyone who wants to know how this study was done can find out.", "Method writing is exacting, getting every step precise enough for someone else to follow. That careful, unglamorous work is done.", "With the method written, this paper turns a corner. Most of what remains is about what you found and what it means.", "The method is done, and it is the kind of section that quietly holds a whole paper up. The first results table would make a tidy target for the next sitting, and a fine place to stop."], "Results": ["The findings are now laid out in tables and text that others can examine. That is what every other section points to.", "The core evidence of this paper is now written. The stretch still ahead is mostly interpretation and finishing.", "Turning output into clear tables and plain sentences is slow, careful work. It is done, and the Discussion now has something concrete to explain.", "When you next open this paper, you could list the findings the Discussion has to explain, and stop there. That list is the skeleton of the section."], "Discussion": ["The Discussion is where this study says what it adds, and that argument now exists. It is the section that turns results into a contribution.", "Placing your findings against the literature and naming the limits honestly takes judgment. That thinking is now on the page.", "The heaviest writing on this paper is behind you. What remains is the abstract, the details and any co-author read.", "If the abstract is next, lifting a key sentence from each section gives you a quick rough version. It is a small task with a clear edge."], "Abstract, refs, format": ["The fiddly finishing work is done, the kind nobody notices unless it is missing. This draft now looks like something a journal can receive.", "Only co-author sign-off and the submission itself remain. Most of the distance is already covered.", "The manuscript is ready to share. A short note to your co-authors with a reply-by date is a good next step.", "Detail work like this drains attention more than it shows. A good coffee or a short walk is a fair way to mark it."], "Co-author sign-off": ["Bringing several people to agree on the same version takes patience and tact, and it is done. This paper now has the whole team behind it.", "Chasing replies, merging tracked changes and settling disagreements rarely gets credit, yet joint papers depend on it. That work is done.", "With everyone on board, only the submission itself is left. This paper is about to leave your desk.", "When you next open this paper, you could draft the cover letter from the abstract and the journal's aims. It is a short job that clears the way to submit."], "Submitted": ["Submitting takes a finished argument, checked references and the nerve to let it go. This one deserves a real celebration, with your co-authors if you can!", "A quiet day after a big send is normal. Picking a small task on your next paper gives you an easy place to start again.", "Selective journals turn down most of what they receive, so whatever comes back is not a ruling on this study. Finishing and sending it was the part in your control, and that is done.", "This submission carries the work of everyone who read, argued and signed off. Letting them know it is out is a kind way to close this stage."], "R&R back": ["Reviews like these sting for nearly everyone who sends work out, and it is fine to let them sting for an evening. Tomorrow, the comment you can answer fastest is a good place to start.", "An R&R keeps this paper in play at the journal. A journal manager reports that most papers sent back for major revision at her journals were later accepted, though nothing is guaranteed.", "Hard reviews are a routine part of publishing, and they often feel lighter once each point has an answer. None of it is a verdict on whether you belong in this field.", "Much-published authors get plenty of revision requests too, and what often sets them apart is that they keep going. Answering these comments is how this paper keeps going too."], "Resubmitted": ["Working through the reviewer comments and writing the response letter is among the most careful writing in research. It is finished and back with the editor.", "Revision asks you to reopen work you thought was finished, and you did it. Staying with a paper through revision is often what gets it into print.", "The paper is out of your hands again, and the waiting is the editor's job now. The next session can go to whichever paper is closest to its own next stage.", "Sending a revision back is a milestone worth marking, and worth sharing with anyone who helped. Whatever the editor decides, this round is finished."], "Accepted": ["This is the one to celebrate out loud, with everyone who helped along the way! When the proofs arrive, a careful pass will close it out.", "The question this paper started with now has an answer others can read and build on. Every earlier stage was building toward this.", "This acceptance rests on carrying the paper through every stage, including the slow and difficult ones. The next paper in your queue can draw on that same persistence.", "Celebrate fully. Then, before the week ends, jotting down the smallest next task on another paper gives this energy somewhere to go."], "Partly done": ["Part of a stage is real movement. Papers get finished through steps this size.", "Getting back into a stage and moving it forward is often the hardest part, and it happened. What is already drafted is the place to pick up, not a fresh page.", "Before closing the file, you could jot down where you stopped and the next small step. Next time, that line is where you begin.", "This paper moved while other work also needed you. Partial progress alongside other demands is still progress, and it counts."]};
+const ENC_SOURCES=[{"id": "p1", "principle": "Progress in meaningful work, even a small step, is the strongest everyday lift to motivation, and setbacks weigh more than equivalent wins. Recognition helps less and needs real progress to attach to. The data are correlational diaries from corporate knowledge workers, so applying them to paper stages is an extrapolation.", "citation": "Amabile, T. M., & Kramer, S. J. (2011). The power of small wins. Harvard Business Review, 89(5), 70-80 (reprint R1105C).", "url": "https://hbr.org/2011/05/the-power-of-small-wins"}, {"id": "p2", "principle": "Frame progress by whichever side is smaller. Early stages count what is done, later stages point to what is left. Effort resets lower right after a reward is earned, so name the next small step in the same message. The studies are consumer and lab settings, not manuscripts.", "citation": "Kivetz, R., Urminsky, O., & Zheng, Y. (2006). The goal-gradient hypothesis resurrected: Purchase acceleration, illusionary goal progress, and customer retention. Journal of Marketing Research, 43(1), 39-58. Koo, M., & Fishbach, A. (2012). The small-area hypothesis: Effects of progress monitoring on goal adherence. Journal of Consumer Research, 39(3), 493-509. Koo, M., & Fishbach, A. (2008). Dynamics of self-regulation: How (un)accomplished goal actions affect motivation. Journal of Personality and Social Psychology, 94(2), 183-195.", "url": "https://doi.org/10.1086/663827"}, {"id": "p3", "principle": "Goals work best with summary feedback showing progress against the goal, and a distant goal works better broken into proximal subgoals. The 13 stages are that breakdown. The subgoal evidence Locke and Latham cite is about complex tasks, mainly one business-game study.", "citation": "Locke, E. A., & Latham, G. P. (2002). Building a practically useful theory of goal setting and task motivation: A 35-year odyssey. American Psychologist, 57(9), 705-717. https://doi.org/10.1037/0003-066X.57.9.705", "url": "https://med.stanford.edu/content/dam/sm/s-spire/documents/PD.locke-and-latham-retrospective_Paper.pdf"}, {"id": "p4", "principle": "Close with one concrete if-then plan for the next small step (implementation intention), offered as a suggestion the writer can ignore.", "citation": "Gollwitzer, P. M., & Sheeran, P. (2006). Implementation intentions and goal achievement: A meta-analysis of effects and processes. Advances in Experimental Social Psychology, 38, 69-119. https://doi.org/10.1016/S0065-2601(06)38002-1", "url": "https://kops.uni-konstanz.de/handle/123456789/10973"}, {"id": "p5", "principle": "Acknowledge the work and the specific choices made (process), not traits or talent. The child praise result is contested (Li and Bates did not replicate the motivation effects), while the adult feedback meta-analysis points the same way (feedback that pulls attention to the self is less effective).", "citation": "Mueller, C. M., & Dweck, C. S. (1998). Praise for intelligence can undermine children's motivation and performance. Journal of Personality and Social Psychology, 75(1), 33-52. Kluger, A. N., & DeNisi, A. (1996). The effects of feedback interventions on performance: A historical review, a meta-analysis, and a preliminary feedback intervention theory. Psychological Bulletin, 119(2), 254-284. Li, Y., & Bates, T. C. (2019). You can't change your basic ability, but you work at things, and that's how we get hard things done: Testing the role of growth mindset on response to setbacks, educational attainment, and cognitive ability. Journal of Experimental Psychology: General, 148(9), 1640-1655. Yeager, D. S., & Dweck, C. S. (2020). What can be learned from growth mindset controversies? American Psychologist, 75(9), 1269-1284.", "url": "https://doi.org/10.1037/0022-3514.75.1.33"}, {"id": "p6", "principle": "Positive feedback raises intrinsic motivation, more for college students than children, when it informs about competence rather than pressures. Wording such as should, must or keep up the good work made praise controlling and undermining in the studies. That contrast rests on four small experiments.", "citation": "Deci, E. L., Koestner, R., & Ryan, R. M. (1999). A meta-analytic review of experiments examining the effects of extrinsic rewards on intrinsic motivation. Psychological Bulletin, 125(6), 627-668. Henderlong, J., & Lepper, M. R. (2002). The effects of praise on children's intrinsic motivation: A review and synthesis. Psychological Bulletin, 128(5), 774-795.", "url": "https://doi.org/10.1037/0033-2909.125.6.627"}, {"id": "p7", "principle": "Praise only works if believed, so keep it specific, earned and proportionate to the stage. The review is about children, and the authors call this part largely speculative (opinion, not tested).", "citation": "Henderlong, J., & Lepper, M. R. (2002). The effects of praise on children's intrinsic motivation: A review and synthesis. Psychological Bulletin, 128(5), 774-795.", "url": "https://www.reed.edu/psychology/motivation/assets/downloads/Henderlong_Lepper_2002.pdf"}, {"id": "p8", "principle": "After a setback, offer self-compassion (name the feeling, note it is shared, one kind next step) rather than self-esteem boosting.", "citation": "Breines, J. G., & Chen, S. (2012). Self-compassion increases self-improvement motivation. Personality and Social Psychology Bulletin, 38(9), 1133-1143, doi:10.1177/0146167212445599. Neff, K. D., Hsieh, Y.-P., & Dejitterat, K. (2005). Self-compassion, achievement goals, and coping with academic failure. Self and Identity, 4, 263-287, doi:10.1080/13576500444000317.", "url": "https://doi.org/10.1177/0146167212445599"}, {"id": "p9", "principle": "Point to the next short session, not a marathon. Boice's samples were small groups of volunteer, self-identified procrastinators on local campuses and were never replicated (Sword 2016), so treat this as suggestive.", "citation": "Boice, R. (1997). Which is more productive, writing in binge patterns of creative illness or in moderation? Written Communication, 14(4), 435-459. Silvia, P. J. (2007). How to write a lot: A practical guide to productive academic writing. Washington, DC: APA (2nd ed. 2018).", "url": "https://gwern.net/doc/psychology/writing/1997-boice.pdf"}, {"id": "p10", "principle": "There is no single right writing rhythm. Credit whatever rhythm got the stage done and drop guilt language. Descriptive interview and questionnaire data, not an intervention trial.", "citation": "Sword, H. (2016). 'Write every day!': A mantra dismantled. International Journal for Academic Development, 21(4), 312-322. https://doi.org/10.1080/1360144X.2016.1210153", "url": "https://www.research.ucsb.edu/sites/default/files/RD/docs/Write-every-day-a-mantra-dismantled.pdf"}, {"id": "p11", "principle": "Writing is helped by social support and accountability. Honour collaborators and frame hand-offs as progress. No study isolates co-authorship itself, so the co-author framing is expert practice.", "citation": "McGrail, M. R., Rickard, C. M., & Jones, R. (2006). Publish or perish: A systematic review of interventions to increase academic publication rates. Higher Education Research & Development, 25(1), 19-35. Skarupski, K. A., & Foucher, K. C. (2018). Writing Accountability Groups (WAGs): A tool to help junior faculty members build sustainable writing habits. Journal of Faculty Development, 32(3), 47-54. Kornhaber, R., Cross, M., Betihavas, V., & Bridgman, H. (2016). The benefits and challenges of academic writing retreats: An integrative review. Higher Education Research & Development, 35(6), 1210-1227. Belcher, W. L. (2019). Writing your journal article in twelve weeks (2nd ed.). University of Chicago Press.", "url": "https://researchportalplus.anu.edu.au/en/publications/publish-or-perish-a-systematic-review-of-interventions-to-increas/"}, {"id": "p12", "principle": "Mark small stages with small rewards that do not cost writing time (Silvia warns against rewarding writing by skipping writing), and save a real celebration for milestones such as submission and acceptance (Belcher closes her submission week with send and celebrate). Expert advice, not tested experimentally.", "citation": "Silvia, P. J. (2007/2018). How to write a lot. APA, as summarized in Barnhill, G. (2020, June 30). Book review: How to write a lot by Paul J. Silvia. Baylor Graduate Writing Center blog. Belcher, W. L. (2019). Writing your journal article in twelve weeks (2nd ed.). University of Chicago Press.", "url": "https://blogs.baylor.edu/gwc/2020/06/30/book-review-how-to-write-a-lot-by-paul-j-silvia/"}, {"id": "p13", "principle": "Rejection and R&R are the normal cost of publishing, and persistence rather than worthiness is often what separates much-published authors from unpublished ones. Expert argument, not trials.", "citation": "Belcher, W. L. (2012, Nov 13). Successful academic writers persist despite rejection. PhD2Published (excerpt from Writing your journal article in twelve weeks). Silvia, P. J. (2007). How to write a lot, pp. 100-101, as reported in Dearing, R. L. (2007), PsycCRITIQUES 52(27). doi:10.1037/a0008247", "url": "https://www.phd2published.com/2012/11/13/successful-academic-writers-persist-despite-rejection-wendy-laura-belcher/"}, {"id": "p14", "principle": "To restart a stalled stage, forgive the delay without mentioning it, and pick up from existing notes or drafts rather than a blank page. Correlational data from first-year students plus expert practice.", "citation": "Wohl, M. J. A., Pychyl, T. A., & Bennett, S. H. (2010). I forgive myself, now I can study: How self-forgiveness for procrastinating can reduce future procrastination. Personality and Individual Differences, 48(7), 803-808. Gollwitzer, P. M., & Sheeran, P. (2006). Implementation intentions and goal achievement: A meta-analysis of effects and processes. Advances in Experimental Social Psychology, 38, 69-119. Belcher (2019), Introduction.", "url": "https://dn790006.ca.archive.org/0/items/affective-cognitive-and-behavioral-differences-bet/I_forgive_myself_now_I_can_study_How_sel.pdf"}, {"id": "p15", "principle": "Selective journals reject most submissions (APA journals averaged a 70% rejection rate in 2023, and the global average acceptance rate is estimated at about 35-40%), so a no is the ordinary outcome and not a ruling on the study. In one large survey of biology journals, roughly a quarter of published articles had first been submitted to another journal.", "citation": "American Psychological Association (2024). Summary report of journal operations, 2023. American Psychologist, 79(5), 777-778, doi:10.1037/amp0001383. Björk, B.-C. (2019). Acceptance rates of scholarly peer-reviewed journals: A literature survey. El Profesional de la Información, 28(4), e280407, doi:10.3145/epi.2019.jul.07. Calcagno, V., Demoinet, E., Gollner, K., Guidi, L., Ruths, D., & de Mazancourt, C. (2012). Flows of research manuscripts among scientific journals reveal hidden submission patterns. Science, 338(6110), 1065-1069.", "url": "https://www.apa.org/pubs/journals/features/2023-statistics.pdf"}, {"id": "p16", "principle": "Frame a setback as common and temporary, and as no evidence that the writer does not belong in the field. Undergraduate samples, so applying it to peer review is an inference.", "citation": "Walton, G. M., & Cohen, G. L. (2011). A brief social-belonging intervention improves academic and health outcomes of minority students. Science, 331(6023), 1447-1451. Walton, G. M., Murphy, M. C., Logel, C., Yeager, D. S., Goyer, J. P., Brady, S. T., et al. (2023). Where and with whom does a brief social-belonging intervention promote progress in college? Science, 380(6644), 499-505.", "url": "https://doi.org/10.1126/science.1198364"}, {"id": "p17", "principle": "Treat an R&R as a strong forward step, honestly and without a guarantee. The source is one publishing executive's figure (80-90%) for major-revision papers at journals she has managed, which she does not name. It is not a systematic study.", "citation": "Cochran, A. (2022, August 22). Revisiting: Should you 'revise and resubmit'? Probably. The Scholarly Kitchen (repost of her 2016 post).", "url": "https://scholarlykitchen.sspnet.org/2022/08/22/revisiting-should-you-revise-and-resubmit-probably/"}, {"id": "p18", "principle": "Acknowledge workload and competing demands rather than treating slow progress as a mindset problem. Cross-sectional data from PhD students in Flanders, so applying it to an individual researcher is an inference.", "citation": "Levecque, K., Anseel, F., De Beuckelaer, A., Van der Heyden, J., & Gisle, L. (2017). Work organization and mental health problems in PhD students. Research Policy, 46(4), 868-879, doi:10.1016/j.respol.2017.02.008.", "url": "https://kclpure.kcl.ac.uk/ws/files/79473041/Work_organization_and_mental_LEVECQUE_Publishedonline13March2017_GREEN_AAM_CC_BY_NC_ND_.pdf"}];
+const S={cfg:{},journals:null,venues:{},sample:null,plans:{},focus:{count:0},db:null,papers:{},scans:{},ctx:{},settings:{...DEFAULTS},run:null,newFolders:[],open:null,loaded:false,writable:true};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`};
+const dayDiff=iso=>{if(!iso)return null;const a=new Date(String(iso).slice(0,10)+"T00:00:00"),b=new Date(todayISO()+"T00:00:00");return isNaN(a)?null:Math.round((a-b)/864e5)};
+const fmtDate=iso=>{if(!iso)return"";const d=new Date(String(iso).slice(0,10)+"T00:00:00");return isNaN(d)?"":d.toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})};
+const short=p=>String(p||"").split("/").filter(Boolean).slice(-1)[0]||p;
+const ord=n=>n+(n%100>=11&&n%100<=13?"th":({1:"st",2:"nd",3:"rd"}[n%10]||"th"));
+const mainFolder=p=>(p.folders||[]).find(f=>typeof f==="string"&&f.trim()&&!f.startsWith("-"))||"";
+
+/* ---------- toast ---------- */
+let toastTimer;
+function toast(fact,undo,cheer){clearTimeout(toastTimer);
+  const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");
+  const m=document.createElement("div");m.className="msg";
+  const f=document.createElement("span");f.className=cheer?"fact":"";f.textContent=fact;m.append(f);
+  if(cheer){const c=document.createElement("span");c.className="cheer";c.textContent=cheer;m.append(c)}
+  t.append(m);
+  if(undo){const b=document.createElement("button");b.textContent="Undo";b.onclick=()=>{undo();t.remove()};t.append(b)}
+  const x=document.createElement("button");x.className="close";x.setAttribute("aria-label","Close");x.textContent="✕";x.onclick=()=>t.remove();t.append(x);
+  $("#toastRoot").replaceChildren(t);
+  toastTimer=setTimeout(()=>t.remove(),cheer?11000:undo?7000:2600)}
+function pickCheer(key){const list=ENC[key];if(!Array.isArray(list)||!list.length)return"";
+  let i=0;try{const k="pd-cheer-"+key;i=(Number(localStorage.getItem(k))||0)%list.length;localStorage.setItem(k,String(i+1))}catch(e){i=Math.floor(Math.random()*list.length)}
+  return list[i]}
+
+/* ---------- model ---------- */
+function stagesOf(p){const a=Array.isArray(p.stages)?p.stages.slice(0,13):[];while(a.length<13)a.push(0);return a.map(v=>{v=Number(v)||0;return v>=1?1:v>0?0.5:0})}
+function progress(p){const st=stagesOf(p);if(st[ACC]===1)return 1;let s=0,t=0;STAGES.forEach(([,w],i)=>{s+=st[i]*w;t+=w});return t?s/t:0}
+function status(p){const st=stagesOf(p);
+  if(st[ACC]===1)return"published";if(st[REV]===0.5)return"revising";if(st[REV]===1)return"resubmitted";if(st[SUB]===1)return"review";return"writing"}
+function stageNow(p){const s=status(p);
+  if(s==="published")return"Accepted";if(s==="revising")return"Revising (R&R)";if(s==="resubmitted")return"Resubmitted";if(s==="review")return"Under review";
+  const i=stagesOf(p).findIndex(v=>v<1);return i<0||i>=SUB?"Ready to submit":STAGES[i][0]}
+function toSubmission(p){return stagesOf(p).slice(0,SUB).filter(v=>v<1).length}
+/* role: your own tap wins, then the author line in the manuscript, then the stored guess */
+function role(p){
+  const a=S.scans[p.id]&&S.scans[p.id].authorship;
+  const det=a&&a.position?`Author line: ${a.position===1?(a.total>1?"1st":"sole author"):ord(a.position)}${a.total>1?" of "+a.total:""}${a.corresponding?", corresponding":""} (${a.file})`:"";
+  if(p.roleByUser){const r=p.userRole||p.role;const main=r==="Lead"||r==="Co-lead"||r==="Main";return{main,label:main?"Main author":"Co-author",why:"Set by you. "+(det||""),corr:false,sure:true}}
+  if(a&&a.position)return{main:a.position===1,corr:!!a.corresponding,label:a.position===1?"Main author":"Co-author",why:det,sure:true};
+  const cx=S.ctx[p.id],hp=cx&&String(cx.yourPosition||"");const mm=hp&&hp.match(/^(\d+)(?:st|nd|rd|th) of (\d+)/i);
+  if(mm||/^sole/i.test(hp||""))return{main:mm?mm[1]==="1":true,corr:!!cx.corresponding,label:(mm?mm[1]==="1":true)?"Main author":"Co-author",why:`Author list: you are ${hp}${cx.corresponding?", corresponding":""} (${(cx.sources||[])[0]||"context check"})`,sure:true};
+  if(p.role==="Lead"||p.role==="Co-lead")return{main:true,label:"Main author",why:"Not found in the manuscript. Tap if wrong.",corr:false,sure:false};
+  if(p.role)return{main:false,label:"Co-author",why:"Not found in the manuscript. Tap if wrong.",corr:false,sure:false};
+  return{main:true,label:"Main author?",why:"Unknown. Tap to set co-author.",corr:false,sure:false}}
+function score(p){
+  const s=status(p),C=S.settings;
+  if(s==="published"||s==="review"||s==="resubmitted"||(p.waiting&&s!=="revising"))return 0;
+  let sc=progress(p)*C.progress;
+  const d=dayDiff(p.deadline);
+  if(d!==null){let u=d<=14?C.d14:d<=30?C.d30:d<=60?C.d60:d<=120?C.d120:0;u*=p.deadlineType==="Hard"?1:p.deadlineType==="Self-set"?C.selfMult:0;sc+=u}
+  if(s==="revising")sc+=C.rr;
+  sc+=(Number(p.venueValue)||0)*C.venue;
+  const w=p.weeksLeft===""||p.weeksLeft==null?NaN:Number(p.weeksLeft);
+  if(!isNaN(w))sc+=w<=2?C.quick2:w<=4?C.quick4:0;
+  return Math.round(sc*10)/10}
+function inPool(p){return !p.archived&&!p.deleted&&status(p)!=="published"}
+/* can you write on it now? (not waiting on a journal or on others) */
+function writable(p){const s=status(p);return (s==="writing"||s==="revising")&&!(p.waiting&&s!=="revising")}
+const ordOf=p=>p.order===""||p.order==null||!isFinite(Number(p.order))?null:Number(p.order);
+/* your order wins. Papers you have not ordered yet follow: main author first, then by score */
+function layout(){
+  const all=Object.values(S.papers).filter(inPool).map(p=>({p,sc:score(p),prog:progress(p),main:role(p).main,ord:ordOf(p)}));
+  const byDefault=(a,b)=>(b.main-a.main)||(writable(b.p)-writable(a.p))||(b.sc-a.sc)||(b.prog-a.prog)||String(a.p.id).localeCompare(String(b.p.id));
+  const seq=[...all.filter(x=>x.ord!==null).sort((a,b)=>a.ord-b.ord||byDefault(a,b)),...all.filter(x=>x.ord===null).sort(byDefault)];
+  const f=seq.find(x=>writable(x.p))||seq[0];const focus=f?[f]:[];const rest=seq.filter(x=>x!==f);
+  const main=rest.filter(x=>x.main),co=rest.filter(x=>!x.main);
+  [...focus,...main,...co].forEach((x,i)=>x.rank=i+1);
+  return{focus,main,co}}
+function grouped(){
+  const L=layout();
+  const others=[];
+  const pub=Object.values(S.papers).filter(p=>!p.archived&&!p.deleted&&status(p)==="published");
+  return{...L,others,pub}}
+function allSuggestions(p){const a=S.scans[p.id]&&Array.isArray(S.scans[p.id].suggestions)?S.scans[p.id].suggestions:[];
+  const b=S.ctx[p.id]&&Array.isArray(S.ctx[p.id].suggestions)?S.ctx[p.id].suggestions.filter(x=>x&&x.type!=="deadline"):[];return[...a,...b]}
+function pendingDeadline(p){if(p.onlineCollab)return null;const l=S.ctx[p.id]&&Array.isArray(S.ctx[p.id].suggestions)?S.ctx[p.id].suggestions:[];const dis=p.dismissed||[];
+  return l.find(x=>x&&x.type==="deadline"&&x.value&&!dis.includes(x.key)&&p.deadline!==x.value)||null}
+function pendingSuggestions(p){if(p.onlineCollab)return[];const dis=p.dismissed||[],st=stagesOf(p);
+  return allSuggestions(p).filter(s=>s&&!dis.includes(s.key)&&Number.isInteger(s.stage)&&s.stage>=0&&s.stage<13&&(s.newRound?st[REV]===1:st[s.stage]<Number(s.value)))}
+
+/* the one "done" button per paper: the next milestone */
+function nextMilestone(p){const s=status(p),sug=pendingSuggestions(p);
+  if(s!=="published"&&sug.some(x=>x.stage===ACC))return["Accepted","accepted"];
+  if(s==="writing")return sug.some(x=>x.stage===REV)?["R&R back","rr"]:["Submitted","submitted"];
+  if(s==="review"){if(sug.some(x=>x.stage===REV&&!x.newRound))return["Resubmitted","resubmitted"];return p.type==="Journal"?["R&R back","rr"]:["Accepted","accepted"]}
+  if(s==="revising")return["Resubmitted","resubmitted"];
+  if(s==="resubmitted")return sug.some(x=>x.newRound)?["R&R back","rr"]:["Accepted","accepted"];
+  return null}
+function applyMilestone(p,kind){const st=stagesOf(p),ms={...(p.milestones||{})},t=todayISO();
+  const fill=n=>{for(let i=0;i<=n;i++)st[i]=1};
+  if(kind==="submitted"){fill(SUB);ms.submitted=ms.submitted||t}
+  if(kind==="rr"){fill(SUB);st[REV]=0.5;ms.reviewsBack=t}
+  if(kind==="resubmitted"){fill(REV);ms.resubmitted=t}
+  if(kind==="accepted"){fill(SUB);if(st[REV]===0.5)st[REV]=1;st[ACC]=1;ms.accepted=t}
+  return{stages:st,milestones:ms,waiting:false}}
+const MS_CHEER={submitted:"Submitted",rr:"R&R back",resubmitted:"Resubmitted",accepted:"Accepted"};
+
+/* ---------- shared links (OneDrive, SharePoint, Google Docs/Drive, Overleaf, Dropbox) ---------- */
+function cleanURL(u){try{const x=new URL(String(u||"").trim());return /^https?:$/.test(x.protocol)?x.href:null}catch(e){return null}}
+function linkLabel(u){let h="",path="";try{const x=new URL(u);h=x.hostname.toLowerCase();path=x.pathname}catch(e){return"Link"}
+  if(/(^|\.)1drv\.ms$|onedrive\.live\.com$|-my\.sharepoint\.com$/.test(h))return"OneDrive";
+  if(/sharepoint\.com$/.test(h))return"SharePoint";
+  if(h==="docs.google.com")return/\/spreadsheets/.test(path)?"Google Sheet":/\/presentation/.test(path)?"Google Slides":/\/forms/.test(path)?"Google Form":"Google Doc";
+  if(h==="drive.google.com")return/\/folders\//.test(path)?"Google Drive folder":"Google Drive";
+  if(/overleaf\.com$/.test(h))return"Overleaf";
+  if(/dropbox\.com$/.test(h))return"Dropbox";
+  if(/teams\.microsoft\.com$/.test(h))return"Teams";
+  return h.replace(/^www\./,"")}
+/* your links, plus the single link saved by the earlier version */
+function linksOf(p){const out=[],seen=new Set();[...(Array.isArray(p.links)?p.links:[]),...(p.sharedLink?[{url:p.sharedLink}]:[])].forEach(l=>{const u=cleanURL(l&&l.url);if(u&&!seen.has(u)){seen.add(u);out.push({url:u,label:(l.label||"").trim()||linkLabel(u)})}});return out}
+function linkChips(p,max){const L=linksOf(p);return L.slice(0,max).map(l=>`<a class="lnk" href="${esc(l.url)}" target="_blank" rel="noopener" title="Open in a new tab: ${esc(l.url)}">${esc(l.label)} ↗</a>`).join("")+(L.length>max?`<button class="lnk" data-open="${esc(p.id)}">+${L.length-max}</button>`:"")}
+
+/* ---------- journal list (your institution's recognised journals) and where to submit ---------- */
+const normJ=t=>String(t||"").toUpperCase().replace(/\bAI\b/g," ARTIFICIAL INTELLIGENCE ").replace(/&/g," AND ").replace(/\([^)]*\)/g," ").replace(/[^A-Z0-9]+/g," ").replace(/\bTHE\b/g," ").replace(/\s+/g," ").trim();
+let jSet=null,jFor=null;
+function onList(title){const L=S.journals;if(!L||!Array.isArray(L.titles)||!title||/^(tbc|tbd|unknown|none|-|–)$/i.test(String(title).trim()))return null;if(jFor!==L){jSet=new Set(L.titles.map(normJ));jFor=L}return jSet.has(normJ(title))}
+const titleCase=t=>String(t||"").toLowerCase().replace(/\b([a-z])/g,m=>m.toUpperCase()).replace(/\b(And|Of|In|For|The|On|To|With|Through)\b/g,m=>m.toLowerCase()).replace(/^./,m=>m.toUpperCase());
+function listName(){return (S.journals&&S.journals.name)||(S.cfg&&S.cfg.journalListName)||"journal list"}
+function venueHTML(p){const L=S.journals,v=S.venues[p.id],ok=onList(p.venue);let h="";
+  const yr=L&&L.year?L.year:"";
+  if(p.venue&&ok!==null)h+=`<p class="src" style="margin:0">${ok?`✓ ${esc(p.venue)} is on your ${esc(listName())} ${esc(yr)}.`:`${esc(p.venue)} is not on your ${esc(listName())} ${esc(yr)}.`}</p>`;
+  if(v&&Array.isArray(v.top3)&&v.top3.length){h+=`<ol class="venues">${v.top3.map((j,k)=>`<li><div><b>${esc(titleCase(j.title))}</b>${onList(j.title)===false?' <span class="late">not on the current list</span>':""}</div><div class="src">${esc(j.why)}${j.risk?` Risk: ${esc(j.risk)}`:""}</div><div class="folderbtns">${/^https?:\/\//.test(j.scopeUrl||"")?`<a class="linkbtn" href="${esc(j.scopeUrl)}" target="_blank" rel="noopener">Aims and scope</a>`:""}${normJ(p.venue)===normJ(j.title)?'<span class="src">Current target</span>':`<button class="btn" data-usevenue="${esc(p.id)}" data-vi="${k}">Use as target</button>`}</div></li>`).join("")}</ol>`;
+    if(v.currentVenueNote)h+=`<p class="src" style="margin:0">${esc(v.currentVenueNote)}</p>`;
+    h+=`<p class="src" style="margin:0">Checked ${esc(fmtDate(v.checkedAt))} against the ${esc(v.listYear||yr)} list.</p>`}
+  else if(!["published"].includes(status(p)))h+=`<p class="src" style="margin:0">No suggestions yet.</p>`;
+  return h}
+async function loadXLSX(){if(window.XLSX)return window.XLSX;await new Promise((ok,no)=>{const sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";sc.onload=ok;sc.onerror=no;document.head.append(sc)});return window.XLSX}
+async function readJournalFile(file){let rows=[];
+  if(/\.csv$/i.test(file.name)){rows=(await file.text()).split(/\r?\n/).map(l=>l.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/).map(c=>c.replace(/^"|"$/g,"").trim()))}
+  else{const X=await loadXLSX();const wb=X.read(await file.arrayBuffer(),{type:"array"});rows=X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false})}
+  const hi=rows.findIndex(r=>r&&r.some(c=>/journal/i.test(String(c||""))));const head=hi>=0?rows[hi]:[];let col=head.findIndex(c=>/journal/i.test(String(c||"")));
+  if(col<0)col=rows[0]&&rows[0].length>1?1:0;
+  const titles=[...new Set(rows.slice(hi+1).map(r=>String((r||[])[col]||"").trim()).filter(t=>t&&!/^journal/i.test(t)))];
+  const year=(file.name.match(/20\d\d/)||[String(new Date().getFullYear())])[0];
+  return{titles,year,source:file.name}}
+
+/* ---------- 25-minute pieces ---------- */
+const FOCUS_MS=25*60e3,BREAK_MS=5*60e3,LONG_MS=15*60e3;
+function piecesOf(p){const pl=S.plans[p.id];return pl&&Array.isArray(pl.pieces)?pl.pieces.filter(x=>x&&x.id&&x.text):[]}
+function nextPiece(p){const st=stagesOf(p);return piecesOf(p).find(x=>!x.done&&!(Number.isInteger(x.stage)&&st[x.stage]===1))||null}
+const newId=()=>"k"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36);
+function writePlan(id,pieces,extra){const cur=S.plans[id]||{};S.plans[id]={...cur,...(extra||{}),pieces};render();
+  if(!S.db||!S.writable)return;clearTimeout(timers["pl_"+id]);
+  const h=setTimeout(async()=>{try{await S.db.doc("plan/"+id).set({...S.plans[id],updatedAt:new Date().toISOString()})}catch(e){toast("Could not save your pieces, try again")}finally{if(timers["pl_"+id]===h)delete timers["pl_"+id]}},400);timers["pl_"+id]=h}
+/* coaching: is this a piece you can finish in 25 minutes? */
+const VAGUE=/^(work(ing)? on|continue|keep going|finish\b|do the|look (at|into)|think about|deal with|sort out|handle|improve( the)? (paper|draft|manuscript|section|chapter)|polish|revise the (paper|manuscript)|write the (paper|manuscript|chapter)|read (the )?literature|(do )?(more )?research\b|progress on)/i;
+const VERBS=/^(revise|edit|respond|clarify|explain|describe|discuss|justify|reword|cite|reorder|clean|recode|analy[sz]e|interpret|annotate|delete|remove|upload|submit|fill|complete|transcribe|tabulate|reformat|paraphrase|chase|draft|write|list|fix|make|check|email|send|read|note|outline|add|cut|move|rename|merge|compare|run|code|tag|count|export|import|format|insert|update|replace|rewrite|summari[sz]e|highlight|create|open|find|search|save|sketch|map|label|answer|reply|ask|book|schedule|align|match|verify|confirm|define|choose|pick|decide|mark|number|renumber|trim|shorten|split|combine|plot|build|test|calculate|compute|copy|paste|collect|sort|review|proofread|re-?read|restructure|name|set|prepare|transfer)\b/i;
+function coach(t){t=String(t||"").trim();if(!t)return["","A good piece: one verb, one visible result, done in 25 minutes."];
+  if(VAGUE.test(t))return["bad","Too big or vague. Name what you will have at the end, e.g. \"Draft 150 words on ...\"."];
+  if(t.length>90)return["bad","Shorter please. One action, one result."];
+  if((t.match(/\band\b/gi)||[]).length>=2||/;/.test(t))return["bad","That sounds like two pieces. Split it."];
+  if(!VERBS.test(t))return["bad","Start with a verb, e.g. Draft, List, Fix, Make, Check, Email."];
+  if(!/\d|\b(one|two|three|paragraph|table|figure|list|bullet|email|note|heading|section|sentence|words?|slide|outline|file|folder|abstract|title|reference|citation|comment)s?\b/i.test(t))return["","Almost. Can you name the result, e.g. a number of words, a table, a list?"];
+  return["good","Finishable in 25 minutes. Good piece."]}
+
+/* ---------- 25-minute timer ---------- */
+let T=null,audioCtx=null;
+function saveT(){try{T?localStorage.setItem("pd-timer",JSON.stringify(T)):localStorage.removeItem("pd-timer")}catch(e){}}
+function loadT(){try{const v=JSON.parse(localStorage.getItem("pd-timer")||"null");if(v&&v.mode)T=v}catch(e){}}
+function unlockAudio(){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==="suspended")audioCtx.resume()}catch(e){}}
+document.addEventListener("pointerdown",unlockAudio,{capture:true,passive:true});document.addEventListener("keydown",unlockAudio,true);
+function chime(){try{if(!audioCtx)return;if(audioCtx.state!=="running")audioCtx.resume().catch(()=>{});const t0=audioCtx.currentTime;[0,0.35,0.7].forEach((d,i)=>{const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=[660,784,988][i];g.gain.setValueAtTime(0.0001,t0+d);g.gain.exponentialRampToValueAtTime(0.25,t0+d+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t0+d+0.6);o.connect(g).connect(audioCtx.destination);o.start(t0+d);o.stop(t0+d+0.65)})}catch(e){}}
+function remaining(){if(!T)return 0;return T.paused?T.left:Math.max(0,T.endAt-Date.now())}
+function startFocus(pid,pieceId){const p=pid?S.papers[pid]:null;if(pid&&!p)return;const pc=p?piecesOf(p).find(x=>x.id===pieceId):null;
+  unlockAudio();T={startAt:Date.now(),mode:"focus",pid:p?pid:null,pieceId:pc?pc.id:"",text:pc?pc.text:p?`${stageNow(p)}: one small piece`:"Focus session",len:FOCUS_MS,endAt:Date.now()+FOCUS_MS,paused:false,left:0,ended:false};saveT();renderTimer();render()}
+function startBreak(){const n=S.focus.count||0,len=n>0&&n%4===0?LONG_MS:BREAK_MS;T={mode:"break",len,endAt:Date.now()+len,paused:false,left:0,ended:false,pid:T&&T.pid,text:len===LONG_MS?"Longer break. Walk, stretch, drink water.":"Short break. Stand up and look away from the screen."};saveT();renderTimer();render()}
+function stopTimer(){T=null;saveT();renderTimer();render();document.title="Paper Progress Tracker"}
+function fmtClock(ms){const s=Math.ceil(ms/1000);return `${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`}
+let focusUnsub=null;
+function watchFocus(){const d=todayISO();if(S.focusDate===d&&focusUnsub)return;S.focusDate=d;S.focus={count:0};if(focusUnsub)focusUnsub();
+  focusUnsub=S.db?S.db.doc("focus/"+d).onSnapshot(x=>{if(S.focusDate!==d)return;const c=x.exists?Number(x.data().count)||0:0;S.focus={count:Math.max(c,S.focus.count||0)};render()},()=>{}):null}
+async function countSession(delta=1){const d=todayISO();if(S.focusDate!==d)watchFocus();const n=Math.max(0,(S.focus.count||0)+delta);S.focus={count:n};render();
+  if(S.db){try{const r=await S.db.doc("focus/"+d).get();const cur=(r.exists&&Number(r.data().count))||0;const m=delta>0?Math.max(n,cur+delta):Math.max(0,Math.min(n,cur+delta));
+    await S.db.doc("focus/"+d).set({count:m,minutes:m*25,updatedAt:new Date().toISOString()})}catch(e){}}}
+function measureTimer(){const el=$("#timerRoot").firstElementChild;document.documentElement.style.setProperty("--timer-h",(el?el.offsetHeight:0)+"px")}
+window.addEventListener("resize",measureTimer);
+function renderTimer(){const root=$("#timerRoot");document.body.classList.toggle("timing",!!T);
+  if(!T){root.innerHTML="";measureTimer();return}
+  const rem=remaining(),p=T.pid&&S.papers[T.pid],pct=Math.min(100,100-rem/T.len*100);
+  let btns="",what="";
+  if(T.mode==="focus"&&!T.ended){what=`<b>${esc(T.text)}</b><small>${p?esc(shortName(p))+" · ":""}one thing, nothing else</small>`;
+    btns=`<button class="btn" data-tpause>${T.paused?"Resume":"Pause"}</button><button class="btn ok" data-tdone>✓ Done early</button><button class="btn x" data-tstop aria-label="Stop timer">✕</button>`}
+  else if(T.mode==="focus"){what=`<b>Time is up.</b><small>Did you finish: ${esc(T.text)}?</small>`;
+    btns=`<button class="btn ok" data-tdone>✓ Finished</button><button class="btn" data-tmore>+5 min</button><button class="btn" data-tnot>Not yet</button>`}
+  else if(!T.ended){what=`<b>${esc(T.text)}</b><small>The next piece is waiting when you are back.</small>`;btns=`<button class="btn" data-tskip>Skip break</button>`}
+  else{const np=p&&nextPiece(p);what=`<b>Break over.</b><small>${np?"Next: "+esc(np.text):"Ready for the next piece?"}</small>`;
+    btns=`<button class="btn primary" data-tnext>▶ Start next 25</button><button class="btn x" data-tstop aria-label="Close">✕</button>`}
+  root.innerHTML=`<div class="timer ${T.mode==="break"?"brk":""}" role="region" aria-label="25 minute timer"><div class="bar" style="width:${pct}%"></div><div class="in"><span class="clock" aria-live="off">${fmtClock(rem)}</span><div class="what">${what}</div>${btns}</div></div>`;measureTimer()}
+setInterval(()=>{if(!T)return;const rem=remaining();
+  if(rem<=0&&!T.ended){T.ended=true;saveT();chime();document.title=T.mode==="focus"?"Time is up · Paper Progress Tracker":"Break over · Paper Progress Tracker";renderTimer();return}
+  const c=document.querySelector(".timer .clock");if(c)c.textContent=fmtClock(rem);const b=document.querySelector(".timer .bar");if(b)b.style.width=Math.min(100,100-rem/T.len*100)+"%";
+  if(!T.ended&&T.mode==="focus")document.title=fmtClock(rem)+" · Paper Progress Tracker"},500);
+function finishPiece(asDone){if(!T)return;const pid=T.pid,p=S.papers[pid],id=T.pieceId;
+  const prevT={...T,left:remaining(),paused:!T.ended,ended:T.ended};const real=T.ended||Date.now()-(T.startAt||0)>=20*60e3;if(real)countSession(1);
+  const prevPiece=p&&id?piecesOf(p).find(x=>x.id===id):null;
+  const undo=()=>{T=prevT;saveT();renderTimer();if(real)countSession(-1);if(prevPiece)writePlan(pid,piecesOf(S.papers[pid]).map(x=>x.id===id?prevPiece:x));render()};
+  if(asDone&&p&&!id){toast(`Session done. ${S.focus.count} × 25 min today.`,undo,pickCheer("Partly done"))}
+  else if(asDone&&!p){toast(`Session done. ${S.focus.count} × 25 min today.`,undo,"")}
+  else if(asDone&&p&&id){const list=piecesOf(p).map(x=>x.id===id?{...x,done:true,doneAt:todayISO()}:x);writePlan(pid,list);
+    const left=list.filter(x=>!x.done).length,n=S.focus.count;
+    const pc=list.find(x=>x.id===id),stg=pc&&Number.isInteger(pc.stage)?pc.stage:null;
+    const stageLeft=stg!==null?list.filter(x=>!x.done&&x.stage===stg).length:null;
+    const fact=`Piece done. ${n} × 25 min today.${stageLeft===0&&stg!==null&&stagesOf(p)[stg]<1?` All ${STAGES[stg][0]} pieces are done, you can mark that stage.`:left?` ${left} piece${left>1?"s":""} left for this paper.`:""}`;
+    toast(fact,undo,pickCheer("Partly done"))}
+  else toast(real?`Session counted. ${S.focus.count} × 25 min today. Showing up is what moves a paper.`:"Stopped early, not counted.",undo,"");
+  startBreak()}
+
+/* ---------- render ---------- */
+function stripHTML(p){const st=stagesOf(p),hints=new Set(pendingSuggestions(p).filter(s=>s.stage<SUB).map(s=>s.stage));let h="",last=1;
+  STAGES.forEach(([n,,ph],i)=>{if(ph!==last){h+='<span class="gap"></span>';last=ph}
+    const v=st[i],cls=(v===1?"v1":v===0.5?"v5":"")+(hints.has(i)&&v<1?" hint":""),sym=v===1?"✔":v===0.5?"◐":"";
+    h+=`<button class="cell p${ph} ${cls}" data-pid="${esc(p.id)}" data-si="${i}" title="${esc(n)}${hints.has(i)&&v<1?", your folders suggest this":""}" aria-label="${esc(n)}: ${v===1?"done":v===0.5?"partly":"not started"}">${sym}</button>`});
+  return `<div class="strip">${h}</div>`}
+function lineHTML(x){const p=x.p,r=role(p),sc=S.scans[p.id],d=dayDiff(p.deadline),C=S.settings,cx=S.ctx[p.id];
+  const mt=x.rank||"",drag=!!x.rank;
+  const writing=status(p)==="writing"&&!p.waiting;
+  const pd=!p.deadline&&writing?pendingDeadline(p):null,pdd=pd?dayDiff(pd.value):null;
+  const late=d!==null&&writing?(d<0?` · <span class="late">${-d}d over</span>`:` · ${d}d left`):pd?` · <span class="late" title="${esc(pd.reason)}">file says due ${esc(fmtDate(pd.value))}${pdd!==null&&pdd>=0?` (${pdd}d)`:""}</span>`:"";
+  const vnote=!p.onlineCollab&&writing&&sc&&sc.manuscript&&sc.manuscript.note?` · <span class="late" title="${esc(sc.manuscript.note)}">check version</span>`:"";
+  const links=linksOf(p),mf=mainFolder(p),fbad=(!mf&&!links.length&&!p.onlineCollab)||(!!mf&&!!cx&&(cx.folderStatus==="missing"||cx.folderStatus==="mismatch"));
+  const ftxt=mf?short(mf):"No folder set";
+  const act=writing||status(p)==="revising",nm=nextMilestone(p),np=act?nextPiece(p):null;
+  return `<div class="line" data-id="${esc(p.id)}">
+    <div class="mark">${drag?`<button class="grip" data-grip="${esc(p.id)}" title="Drag to change rank or role. Arrow keys also move it." aria-label="Move ${esc(p.title||"paper")}. Use arrow keys.">⠿</button><span class="num">${mt}</span>`:""}</div>
+    <div class="tcell"><div class="trow"><button class="ttl" data-open="${esc(p.id)}" title="${esc(p.title)}">${esc(p.title||"Untitled")}</button><button class="role ${r.main?"main":""} ${r.sure?"":"unsure"}" data-roletoggle="${esc(p.id)}" title="${esc(r.why)} Tap to switch.">${esc(r.label)}${r.corr?" · corr.":""}</button></div>
+      <div class="where">${p.onlineCollab&&links.length?"":(mf||!links.length)?`<button class="folder ${fbad?"bad":""}" data-openfolder="${esc(p.id)}" title="${mf?(S.local?"Open this folder in Finder":"Copy the folder path"):"Set a folder or add a link in the paper's details"}: ${esc(mf||"none")}${cx&&cx.folderExplanation?". "+esc(cx.folderExplanation):""}">${fbad?"⚠ ":""}${esc(mf?short(mf):p.onlineCollab?"Shared online, add the link":"No folder or link")}</button>`:""}${linkChips(p,p.onlineCollab?3:2)}</div></div>
+    ${stripHTML(p)}
+    <div class="pct num">${Math.round(x.prog*100)}%</div>
+    ${np?`<div class="now"><button class="go ${T&&T.mode==="focus"&&T.pieceId===np.id?"on":""}" data-go="${esc(p.id)}" data-piece="${esc(np.id)}" title="Start 25 minutes: ${esc(np.text)}"><i>▶ 25</i><span>${esc(np.text)}</span></button></div>`:act?`<div class="now"><button class="go ${T&&T.mode==="focus"&&T.pid===p.id&&!T.pieceId?"on":""}" data-go="${esc(p.id)}" data-piece="" title="Start 25 minutes on ${esc(stageNow(p))}"><i>▶ 25</i><span><b>${esc(stageNow(p))}</b>${late}${vnote}</span></button></div>`:`<div class="now plain"><b>${esc(p.onlineCollab?"Online with co-authors":p.waiting&&status(p)==="writing"?"Waiting on others":stageNow(p))}</b>${late}${vnote}</div>`}
+    <div class="acts">${nm?`<button class="btn ok" data-ms="${nm[1]}" data-pid="${esc(p.id)}">✓ ${nm[0]}</button>`:""}</div>
+  </div>`}
+function render(){
+  if(D){D.dirty=true;return}
+  const a0=document.activeElement,focusSel=a0&&a0.closest&&a0.closest("#groups")?focusKey(a0):null;
+  const n=Object.values(S.papers).filter(inPool).length;
+  let meta=new Date().toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"});
+  if(S.loaded)meta+=` · ${n} papers in progress`;
+  if(S.focus&&S.focus.count)meta+=` · today ${S.focus.count} × 25 min`;
+  if(S.run&&S.run.lastRun)meta+=` · folders read ${new Date(S.run.lastRun).toLocaleString(undefined,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}`;
+  $("#meta").textContent=S.db||S.loaded?meta:"Open Paper Progress Tracker from claude.ai to load your papers.";
+  if(S.local)$("#meta").insertAdjacentHTML("beforeend",' · on this computer'+(S.cfg&&/^https:\/\//.test(S.cfg.onlineUrl||"")?` · <a href="${esc(S.cfg.onlineUrl)}" target="_blank" rel="noopener">online version</a>`:""));
+  if(!S.loaded){$("#groups").innerHTML=S.db?'<div class="group"><div class="empty">Loading your papers…</div></div>':"";return}
+  const G=grouped();
+  const phases=`<span class="phases"><span><i style="background:var(--p1)"></i>prepare</span><span><i style="background:var(--p2)"></i>write</span><span><i style="background:var(--p3)"></i>publish</span></span>`;
+  const zone=(z,l,hint)=>`<div class="zone" data-zone="${z}">${l.map(lineHTML).join("")||`<div class="zhint">${hint}</div>`}</div>`;
+  let h=`<div class="group focusblk"><div class="ghead"><span>Focus · one paper at a time</span>${phases}</div>${zone("focus",G.focus,"Drag a paper here to focus on it.")}</div>`;
+  if(G.main.length||G.co.length)h+=`<div class="group"><div class="ghead"><span>Next up · ${G.main.length+G.co.length}</span><span>drag ⠿ to reorder</span></div>
+    <div class="sub">Main author</div>${zone("main",G.main,"Drag a paper here to make it main author.")}
+    <div class="sub">Co-author</div>${zone("co",G.co,"Drag a paper here to make it co-author.")}</div>`;
+  const ign=S.settings.ignoredFolders||[];const known=new Set(Object.values(S.papers).filter(p=>!p.deleted).flatMap(p=>p.folders||[]));
+  const nf=(S.newFolders||[]).filter(f=>!ign.includes(f)&&!known.has(f));
+  if(nf.length)h+=`<div class="group">${nf.map(f=>`<div class="newf">New folder: <code>${esc(short(f))}</code><button class="btn" data-addfolder="${esc(f)}">Add as paper</button><button class="btn x" data-ignorefolder="${esc(f)}" aria-label="Ignore this folder">✕</button></div>`).join("")}</div>`;
+  const openSet=new Set([...document.querySelectorAll("details.arch[open]")].map(d=>d.dataset.k));
+  if(G.pub.length)h+=`<details class="group arch" data-k="pub"><summary class="ghead"><span>Accepted · ${G.pub.length}</span><span>show</span></summary>${G.pub.map(p=>`<div class="archrow"><button class="linkbtn" data-open="${esc(p.id)}">${esc(p.title||"Untitled")}</button><span class="src">${esc(fmtDate((p.milestones||{}).accepted))}</span></div>`).join("")}</details>`;
+  const arc=Object.values(S.papers).filter(p=>p.archived&&!p.deleted);
+  if(arc.length)h+=`<details class="group arch" data-k="arc"><summary class="ghead"><span>Archived · ${arc.length}</span><span>show</span></summary>${arc.map(p=>`<div class="archrow"><span>${esc(p.title||"Untitled")}</span><button class="btn" data-restore="${esc(p.id)}">Restore</button></div>`).join("")}</details>`;
+  $("#groups").style.cssText="display:flex;flex-direction:column;gap:12px";
+  $("#groups").innerHTML=h;
+  document.querySelectorAll("details.arch").forEach(d=>{if(openSet.has(d.dataset.k))d.open=true});
+  if(focusSel){const el=document.querySelector("#groups "+focusSel);if(el)el.focus()}
+  const a=document.activeElement,typing=a&&a.closest&&a.closest(".drawer")&&a.matches("textarea,select,input:not([type=checkbox])");
+  if(S.open&&!typing)renderDrawer()}
+/* ---------- drag to reorder / change role ---------- */
+let D=null;
+function currentIds(){const L=layout();return{focus:L.focus.map(x=>x.p.id),main:L.main.map(x=>x.p.id),co:L.co.map(x=>x.p.id)}}
+function applyMove(id,zone,index){const p=S.papers[id];if(!p)return;
+  if(zone==="focus"&&!writable(p)){toast(status(p)==="writing"?"It is marked waiting on others. Untick that in its details first.":"It is with the journal or editors, nothing to write on it yet.");render();return}const cur=currentIds();
+  const beforeOrd={};Object.values(S.papers).filter(inPool).forEach(q=>beforeOrd[q.id]=q.order??null);const beforeRole={userRole:p.userRole??null,roleByUser:!!p.roleByUser};
+  ["focus","main","co"].forEach(z=>cur[z]=cur[z].filter(x=>x!==id));
+  if(zone==="focus"){const prev=cur.focus[0];cur.focus=[id];if(prev){cur[role(S.papers[prev]).main?"main":"co"].unshift(prev)}}
+  else cur[zone].splice(Math.max(0,Math.min(index,cur[zone].length)),0,id);
+  if(!cur.focus.length){const take=z=>{const k=cur[z].findIndex(x=>x!==id&&writable(S.papers[x]));return k<0?null:cur[z].splice(k,1)[0]};const nx=take("main")||take("co");if(nx)cur.focus=[nx]}
+  const seq=[...cur.focus,...cur.main,...cur.co];
+  seq.forEach((pid,i)=>{if(ordOf(S.papers[pid])!==i+1)writePaper(pid,{order:i+1})});
+  let roleNote="";
+  if(zone!=="focus"){const wantMain=zone==="main";if(role(p).main!==wantMain){writePaper(id,{userRole:wantMain?"Lead":"Co-author",roleByUser:true,confirmed:true});roleNote=wantMain?" Now main author.":" Now co-author."}}
+  const rank=seq.indexOf(id)+1,wnote=p.waiting&&status(p)==="writing"?" It is still marked waiting on others, untick that in its details when you can write on it.":"";
+  toast((zone==="focus"?`Focus: ${shortName(p)}.`:`Moved to rank ${rank}.${roleNote}`)+wnote,()=>{Object.entries(beforeOrd).forEach(([k,v])=>writePaper(k,{order:v}));writePaper(id,beforeRole)})}
+function moveByKey(id,dir){const c=currentIds();const z=c.focus.includes(id)?"focus":c.main.includes(id)?"main":"co";
+  if(z==="focus"){if(dir>0){const p=S.papers[id];applyMove(id,role(p).main?"main":"co",0)}return}
+  const i=c[z].indexOf(id);
+  if(dir<0){if(i>0)applyMove(id,z,i-1);else if(z==="main")applyMove(id,"focus",0);else applyMove(id,"main",c.main.length)}
+  else{if(i<c[z].length-1)applyMove(id,z,i+1);else if(z==="main")applyMove(id,"co",0)}
+  setTimeout(()=>{const g=document.querySelector(`#groups [data-grip="${CSS.escape(id)}"]`);if(g)g.focus()},0)}
+document.addEventListener("pointerdown",e=>{const g=e.target.closest&&e.target.closest(".grip");if(!g||e.button>0)return;
+  const line=g.closest(".line");if(!line)return;e.preventDefault();
+  D={id:g.dataset.grip,line,y0:e.clientY,moved:false,pid:e.pointerId,dirty:false};try{g.setPointerCapture(e.pointerId)}catch(_){}});
+document.addEventListener("pointermove",e=>{if(!D||e.pointerId!==D.pid)return;const dy=e.clientY-D.y0;
+  if(!D.moved){if(Math.abs(dy)<5)return;const r=D.line.getBoundingClientRect();D.moved=true;D.off=D.y0-r.top;
+    D.ph=document.createElement("div");D.ph.className="ph";D.ph.style.height=r.height+"px";D.line.after(D.ph);
+    D.line.classList.add("dragging");D.line.style.left=r.left+"px";D.line.style.width=r.width+"px";document.body.classList.add("dragging-now")}
+  D.line.style.top=(e.clientY-D.off)+"px";
+  if(e.clientY<60)window.scrollBy(0,-12);else if(e.clientY>innerHeight-60)window.scrollBy(0,12);
+  const el=document.elementFromPoint(Math.min(e.clientX,innerWidth-20),e.clientY);if(!el)return;
+  const sub=el.closest&&el.closest(".sub");if(sub&&sub.nextElementSibling&&sub.nextElementSibling.dataset.zone){const z=sub.nextElementSibling,h=z.querySelector(".zhint");if(h)h.after(D.ph);else z.prepend(D.ph);return}
+  const zoneEl=el.closest&&el.closest("[data-zone]");const ln=el.closest&&el.closest(".line:not(.dragging)");
+  if(ln&&ln.parentElement&&ln.parentElement.dataset.zone){const r=ln.getBoundingClientRect();if(e.clientY<r.top+r.height/2)ln.before(D.ph);else ln.after(D.ph)}
+  else if(zoneEl){const hint=zoneEl.querySelector(".zhint");if(hint)hint.after(D.ph);else if(!zoneEl.contains(D.ph))zoneEl.append(D.ph)}});
+function endDrag(apply){if(!D)return;const d=D;D=null;document.body.classList.remove("dragging-now");
+  if(d.moved&&apply&&d.ph&&d.ph.parentElement&&d.ph.parentElement.dataset.zone){const zone=d.ph.parentElement.dataset.zone;
+    const idx=[...d.ph.parentElement.children].filter(c=>c===d.ph||(c.classList.contains("line")&&!c.classList.contains("dragging"))).indexOf(d.ph);
+    d.ph.remove();d.line.classList.remove("dragging");applyMove(d.id,zone,idx);render()}
+  else{if(d.ph)d.ph.remove();render()}}
+document.addEventListener("pointerup",e=>{if(D&&e.pointerId===D.pid)endDrag(true)});
+document.addEventListener("pointercancel",e=>{if(D&&e.pointerId===D.pid)endDrag(false)});
+function focusKey(el){const d=el.dataset||{};
+  if(d.si!==undefined&&d.pid)return `[data-pid="${CSS.escape(d.pid)}"][data-si="${d.si}"]`;
+  if(d.ms&&d.pid)return `[data-pid="${CSS.escape(d.pid)}"][data-ms]`;
+  if(d.roletoggle)return `[data-roletoggle="${CSS.escape(d.roletoggle)}"]`;
+  if(d.grip)return `[data-grip="${CSS.escape(d.grip)}"]`;
+  if(d.open)return `[data-open="${CSS.escape(d.open)}"]`;
+  return null}
+function renderSettings(){$("#settings").innerHTML=SETTING_LABELS.map(([k,l])=>`<label>${esc(l)}<input type="number" step="any" id="set-${k}" data-setting="${k}" value="${esc(S.settings[k])}"></label>`).join("")+
+  `<div style="grid-column:1 / -1;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px"><b style="font-size:13px">Journal list</b>
+    <span class="src" id="jinfo">${S.journals&&S.journals.titles?`${esc(listName())}, ${esc(S.journals.year)}, ${S.journals.titles.length} journals (${esc(S.journals.source||"")}).`:"No list yet."}</span>
+    <label class="inline" style="font-size:13px">Replace with next year's list (.xlsx or .csv) <input type="file" id="jfile" accept=".xlsx,.xls,.csv" style="width:auto"></label><div id="jconfirm"></div></div>`+
+  `<details style="grid-column:1 / -1"><summary>Where the encouragement comes from (${ENC_SOURCES.length} verified sources)</summary><ol style="font-size:13px;color:var(--ink2);padding-left:18px">${ENC_SOURCES.map(x=>`<li style="margin:4px 0">${esc(x.principle)} <span class="src">${esc(x.citation)}</span> <a href="${esc(x.url)}" target="_blank" rel="noopener">source</a></li>`).join("")}</ol></details>`}
+
+/* ---------- drawer ---------- */
+function field(p,k,label,type="text",opts){const v=p[k]??"";
+  if(type==="select")return `<label>${label}<select id="f-${k}" data-f="${k}">${opts.map(o=>{const[val,txt]=Array.isArray(o)?o:[o,o];return `<option value="${esc(val)}" ${String(v)===String(val)?"selected":""}>${esc(txt)}</option>`}).join("")}</select></label>`;
+  if(type==="area")return `<label>${label}<textarea id="f-${k}" data-f="${k}">${esc(v)}</textarea></label>`;
+  return `<label>${label}<input id="f-${k}" data-f="${k}" type="${type}" value="${esc(v)}"></label>`}
+function isMe(n){const L=(S.cfg&&Array.isArray(S.cfg.names))?S.cfg.names:[];const t=String(n||"").toLowerCase();return L.some(x=>x&&t.includes(String(x).toLowerCase()))}
+function knowHTML(p){const cx=S.ctx[p.id],sc=S.scans[p.id]||{},m=sc.manuscript,a=sc.authorship,mf=mainFolder(p);
+  let h="";
+  const fs=cx&&cx.folderStatus;
+  h+=`<p><span class="k">Folder I follow</span><span class="num">${esc(mf||"none set")}</span>${(p.folders||[]).filter(f=>f!==mf).length?` <span class="src">+ ${(p.folders||[]).filter(f=>f!==mf).map(f=>esc(short(f.replace(/^-/,"skip: ")))).join(", ")}</span>`:""}</p>`;
+  h+=S.local?`<div class="folderbtns">${mf?`<button class="btn" data-openfolder="${esc(p.id)}">Open folder</button>`:""}${sc.manuscript&&sc.manuscript.path?`<button class="btn" data-openlatest="${esc(p.id)}">Open latest version</button>`:""}<button class="btn" data-choosefolder="${esc(p.id)}">${mf?"Change folder…":"Choose folder…"}</button>${mf?`<button class="btn" data-rmfolder="${esc(p.id)}">Remove folder</button>`:""}</div>`
+    :`<div class="folderbtns">${mf?`<button class="btn" data-openfolder="${esc(p.id)}">Copy folder path</button><button class="btn" data-rmfolder="${esc(p.id)}">Remove folder</button>`:""}</div><p class="src">To open or change folders with one click, open Paper Progress Tracker from its icon on your desktop.</p>`;
+  const L=linksOf(p);
+  h+=`<div><span class="k">Online links (OneDrive, Google Docs or Drive, Overleaf)</span><div class="links">${L.map(l=>`<div class="linkrow"><a class="lnk" href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label)} ↗</a><span class="u" title="${esc(l.url)}">${esc(l.url)}</span><button class="btn x" data-dellink="${esc(p.id)}" data-url="${esc(l.url)}" aria-label="Remove this link">✕</button></div>`).join("")}</div>
+    <div class="addpiece" style="margin-top:6px"><input id="newLink" placeholder="Paste a share link, e.g. OneDrive or Google Docs" inputmode="url" autocomplete="off"><button class="btn" data-addlink="${esc(p.id)}">Add link</button></div></div>`;
+  if(p.onlineCollab)h+=`<div class="note">You moved this paper to a shared online document. The files in the folder can be older than that document, so I do not judge progress, versions or deadlines from them.${L.length?` <a href="${esc(L[0].url)}" target="_blank" rel="noopener">Open ${esc(L[0].label)}</a>`:" Add its link below."}</div>`;
+  if(!mf)h+=`<div class="note bad">No folder is set for this paper, so I cannot follow it yet.</div>`;
+  else if(fs&&fs!=="ok")h+=`<div class="note ${fs==="mismatch"||fs==="missing"?"bad":""}">${esc(cx.folderExplanation||"")}</div>`;
+  else if(fs==="ok")h+=`<p class="src">Checked: this is the paper's own folder.</p>`;
+  if(cx&&cx.suggestedFolder&&cx.suggestedFolder!==mf)h+=`<div class="sugg"><span>A better folder may be <span class="num">${esc(short(cx.suggestedFolder))}</span></span><button class="btn" data-usefolder="${esc(cx.suggestedFolder)}">Use this folder</button></div>`;
+  if(cx){
+    if(cx.manuscriptTitle&&cx.manuscriptTitle!=="unknown")h+=`<p><span class="k">Manuscript title</span>${esc(cx.manuscriptTitle)}</p>`;
+    if(cx.about&&cx.about!=="unknown")h+=`<p><span class="k">What it is about</span>${esc(cx.about)}</p>`;
+    if(Array.isArray(cx.authors)&&cx.authors.length)h+=`<p><span class="k">Authors</span>${cx.authors.map(n=>isMe(n)?`<span class="me">${esc(n)}</span>`:esc(n)).join(", ")}${cx.yourPosition&&cx.yourPosition!=="unknown"?` <span class="src">(you: ${esc(cx.yourPosition)}${cx.corresponding?", corresponding":""})</span>`:""}</p>`;
+    else if(cx.yourPosition)h+=`<p><span class="k">Authors</span>${esc(cx.yourPosition)}</p>`;
+    if(cx.venue&&cx.venue!=="unknown")h+=`<p><span class="k">Venue</span>${esc(cx.venue)}</p>`;
+    if(cx.statusEvidence&&cx.statusEvidence!=="unknown")h+=`<p><span class="k">What the files show</span>${esc(cx.statusEvidence)}</p>`;
+    if(Array.isArray(cx.relatedPapers)&&cx.relatedPapers.length)h+=`<p><span class="k">Related papers</span>${cx.relatedPapers.map(r=>`<button class="linkbtn" data-open="${esc(r.id)}">${esc(r.id)}</button> ${esc(r.reason)}`).join(" · ")}</p>`;
+  }else if(a&&a.position){h+=`<p><span class="k">Authors</span>You are ${a.position===1?(a.total>1?"1st":"the sole author"):ord(a.position)}${a.total>1?" of "+a.total:""}${a.corresponding?", corresponding":""}.</p>`}
+  if(m)h+=`<p><span class="k">Latest version</span><span class="num">${esc(m.name)}</span> <span class="src">${esc(m.version||"")}${m.versions>1?` · ${m.versions} versions kept`:""}${m.words?` · ${Number(m.words).toLocaleString()} words`:""}${m.prevName&&m.delta?` · ${m.delta>0?"+":""}${Number(m.delta).toLocaleString()} vs ${esc(m.prevVersion||m.prevName)}`:""}</span></p>`;
+  if(m&&m.note)h+=`<div class="note">${esc(m.note)}</div>`;
+  if(sc.summary)h+=`<p class="src">${esc(sc.summary)}</p>`;
+  if(cx&&Array.isArray(cx.sources)&&cx.sources.length)h+=`<p class="src">Read from: ${cx.sources.slice(0,6).map(esc).join(", ")}${cx.checkedAt?` · ${esc(fmtDate(cx.checkedAt))}`:""}</p>`;
+  return h}
+function renderDrawer(){
+  const p=S.papers[S.open];if(!p||p.deleted){closeDrawer();return}
+  const st=stagesOf(p),ms=p.milestones||{},sug=pendingSuggestions(p),r=role(p),pdl=pendingDeadline(p);
+  const active=document.activeElement&&document.activeElement.id,oldDr=document.querySelector(".drawer"),keepTop=oldDr?oldDr.scrollTop:0;
+  $("#drawerRoot").innerHTML=`<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true" aria-label="${esc(p.title)}">
+    <header><div><h3>${esc(p.id)} · ${esc(stageNow(p))} · ${Math.round(progress(p)*100)}%</h3><h2 style="margin-top:4px">${esc(p.title||"Untitled")}</h2></div><button class="btn x" id="drawerClose" data-close aria-label="Close">✕</button></header>
+    ${sug.length||pdl?`<div class="sec" style="border-top:none;padding-top:0"><h3>Your folders suggest</h3>${sug.map(s=>`<div class="sugg"><span><b>${esc(s.newRound?"A new round of reviews":s.stage===REV?"Revision (R&R)":STAGES[s.stage][0])}</b>${s.value<1&&!s.newRound&&s.stage<SUB?" (partly)":""}<br><span class="src">${esc(s.reason||"")}</span></span>${sugButtons(p,s)}<button class="btn x" data-sdis="${esc(s.key)}" data-pid="${esc(p.id)}" aria-label="Not yet, hide this suggestion">✕</button></div>`).join("")}${pdl?`<div class="sugg"><span><b>Deadline ${esc(fmtDate(pdl.value))}</b><br><span class="src">${esc(pdl.reason||"")}</span></span><button class="btn ok" data-sdeadline="${esc(pdl.key)}" data-pid="${esc(p.id)}">Use this deadline</button><button class="btn x" data-sdis="${esc(pdl.key)}" data-pid="${esc(p.id)}" aria-label="Hide this suggestion">✕</button></div>`:""}</div>`:""}
+    <div class="sec" ${sug.length||pdl?"":'style="border-top:none;padding-top:0"'}><div class="stages">${STAGES.map(([n,,ph],i)=>`<button class="stagebtn" id="sb-${i}" data-pid="${esc(p.id)}" data-si="${i}"><span class="cell p${ph} ${st[i]===1?"v1":st[i]===0.5?"v5":""}">${st[i]===1?"✔":st[i]===0.5?"◐":""}</span>${esc(n)}</button>`).join("")}</div>
+      ${["submitted","reviewsBack","resubmitted","accepted"].some(k=>ms[k])?`<div class="grid2">${["submitted","reviewsBack","resubmitted","accepted"].filter(k=>ms[k]).map(k=>`<label>${({submitted:"Submitted on",reviewsBack:"Reviews back on",resubmitted:"Resubmitted on",accepted:"Accepted on"})[k]}<input type="date" id="ms-${k}" data-msdate="${k}" value="${esc(String(ms[k]).slice(0,10))}"></label>`).join("")}</div>`:""}</div>
+    <div class="sec"><h3>25-minute pieces</h3>${piecesHTML(p)}</div>
+    ${p.type==="Chapter"||p.type==="Conference"?"":`<div class="sec"><h3>Where to submit</h3>${venueHTML(p)}</div>`}
+    <div class="sec"><h3>What I know about this paper</h3><div class="know">${knowHTML(p)}
+      <p><span class="k">Your role</span>${esc(r.label)}${r.corr?", corresponding author":""} <span class="src">${esc(r.why)}</span> ${p.roleByUser?`<button class="linkbtn" data-roleauto="${esc(p.id)}">Use the detected role</button>`:""}</p></div></div>
+    <div class="sec">${field(p,"nextAction","Next action","area")}
+      <div class="grid2">${field(p,"deadline","Deadline","date")}${field(p,"deadlineType","Deadline type","select",["None","Hard","Self-set"])}</div>
+      <label class="inline"><input type="checkbox" id="f-waiting" data-fb="waiting" ${p.waiting?"checked":""}> Waiting on others, nothing for me to write</label>
+      <label class="inline"><input type="checkbox" id="f-onlineCollab" data-fb="onlineCollab" ${p.onlineCollab?"checked":""}> Moved to a shared online document (co-authors edit there)</label>
+
+      <details><summary>More</summary><div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+        ${field(p,"title","Title")}
+        <div class="grid2">${field(p,"venue","Target venue")}${field(p,"type","Type","select",["Journal","Conference","Chapter","Editorial","Other"])}${field(p,"venueValue","Venue value","select",[["","–"],"1","2","3"])}${field(p,"weeksLeft","Weeks of work left","number")}</div>
+        ${field(p,"blocker","Blocker","area")}
+        ${field(p,"notes","Notes","area")}
+        <label>Folders I follow (one per line, start with - to skip a subfolder or file)<textarea id="f-folders" data-folders>${esc((p.folders||[]).join("\n"))}</textarea></label>
+        <div id="archiveBox" style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-askarchive>Archive paper</button><button class="btn" data-askdelete style="color:var(--warn);border-color:var(--warn)">Delete paper</button></div>
+      </div></details>
+    </div>
+  </aside>`;
+  {const d=document.querySelector(".drawer");if(d&&keepTop)d.scrollTop=keepTop}const el=active&&document.getElementById(active);if(el)el.focus();else if(!document.activeElement||!document.activeElement.closest(".drawer"))$("#drawerClose").focus()}
+function piecesHTML(p){const list=piecesOf(p),pl=S.plans[p.id]||{},st=stagesOf(p);
+  const rows=list.map(x=>`<div class="piece ${x.done?"done":""}"><input type="checkbox" id="pc-${esc(x.id)}" data-pdone="${esc(x.id)}" data-pid="${esc(p.id)}" ${x.done?"checked":""} aria-label="Done"><span title="${esc(x.basis||"")}">${esc(x.text)}${Number.isInteger(x.stage)&&STAGES[x.stage]?` <span class="stg">${esc(STAGES[x.stage][0])}</span>`:""}</span>${x.done?"":`<button class="btn" data-go="${esc(p.id)}" data-piece="${esc(x.id)}" aria-label="Start 25 minutes">▶ 25</button>`}<button class="btn x" data-pdel="${esc(x.id)}" data-pid="${esc(p.id)}" aria-label="Remove piece">✕</button></div>`).join("");
+  const est=pl.unitsToSubmission&&status(p)==="writing"?`<p class="src" style="margin:0">About ${pl.unitsToSubmission} × 25 min to submission (estimate${pl.unitsReason?": "+esc(pl.unitsReason):""})</p>`:"";
+  return `${est}<div class="pieces">${rows||'<span class="src">No pieces yet. Add one below, or let Claude break the current stage down.</span>'}</div>
+    <div class="addpiece"><input id="newPiece" data-coach placeholder="Add a piece, e.g. Draft 150 words on H4" maxlength="140"><button class="btn" data-padd="${esc(p.id)}">Add</button></div>
+    <div class="coach" id="coachLine">${esc(coach("")[1])}</div>
+    ${S.sample?`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn" id="breakBtn" data-pbreak="${esc(p.id)}" ${S.breaking?"disabled":""}>Break down ${esc(stageNow(p))} with Claude</button><span class="src" id="breakMsg">${S.breaking===p.id?'Thinking… <button class="linkbtn" data-pstop>Stop</button>':esc(S.breakMsg||"")}</span></div>`:""}`}
+function sugButtons(p,s){const a=(k,l,cls="ok")=>`<button class="btn ${cls}" data-sdone="${esc(s.key)}" data-kind="${k}" data-pid="${esc(p.id)}">${l}</button>`;
+  if(s.newRound)return a("rr","✓ Reviews back");
+  if(s.stage===ACC)return a("accepted","✓ Accepted");
+  if(s.stage===REV)return a("rr","◐ Revising","")+a("resubmitted","✓ Resubmitted");
+  if(s.stage===SUB)return a("submitted","✓ Submitted");
+  return a("done","✓ Done")+(s.value<1?a("part","◐ Partly",""):"")}
+function openDrawer(id){S.open=id;renderDrawer()}
+function closeDrawer(){const id=S.open;S.open=null;$("#drawerRoot").innerHTML="";if(id){const t=document.querySelector(`#groups [data-open="${CSS.escape(id)}"]`);if(t)t.focus()}}
+
+/* ---------- writes ---------- */
+const pending={},timers={};
+function writePaper(id,patch,delay=0){
+  const p=S.papers[id];if(!p)return;Object.assign(p,patch);render();
+  if(!S.db||!S.writable)return;
+  pending[id]=Object.assign(pending[id]||{},patch);
+  clearTimeout(timers[id]);
+  timers[id]=setTimeout(async()=>{const body=pending[id];delete pending[id];if(!body)return;
+    try{await S.db.doc("papers/"+id).update({...body,updatedAt:new Date().toISOString()})}
+    catch(e){if(e&&e.code==="invalid_argument"){S.writable=false;toast("Changes cannot be saved from this view")}else toast("Could not save, try again")}},delay)}
+function snapshotOf(p){return{stages:stagesOf(p),milestones:{...(p.milestones||{})},dismissed:[...(p.dismissed||[])],waiting:!!p.waiting}}
+/* db update() merges nested objects, so undo blanks milestone dates the action added */
+function restore(id,before){const cur=(S.papers[id]&&S.papers[id].milestones)||{},ms={...before.milestones};
+  Object.keys(cur).forEach(k=>{if(!(k in before.milestones))ms[k]=""});writePaper(id,{...before,milestones:ms})}
+function shortName(p){let t=String(p.title||"This paper").replace(/\s*\([^)]*\)\s*$/,"").split(":")[0].trim();if(t.length>48)t=t.slice(0,48).replace(/\s+\S*$/,"")+"…";return t}
+function cheerFor(p,stageKey,value){
+  const pct=Math.round(progress(p)*100),left=toSubmission(p),s=status(p),name=shortName(p),where={Conference:"the conference",Chapter:"the book editors",Editorial:"the editors"}[p.type]||"the journal";
+  if(stageKey==="Revision (R&R)")stageKey=value===1?"Resubmitted":"R&R back";
+  const doneW=SUB-left;let fact;
+  if(stageKey==="Submitted")fact=`Submitted. ${name} is now with ${where}.`;
+  else if(stageKey==="R&R back")fact=`Reviews are back for ${name}. It is now in revision.`;
+  else if(stageKey==="Resubmitted")fact=`Resubmitted. ${name} is back with the editor.`;
+  else if(stageKey==="Accepted")fact=`Accepted. ${name} is a publication.`;
+  else if(value===0.5)fact=`${stageKey} partly done. ${name} is at ${pct}%.`;
+  else fact=`${stageKey} done. ${s!=="writing"?`${name} is at ${pct}%.`:doneW<=5?`${name}: ${doneW} of ${SUB} stages before submission done.`:left?`${name}: ${left} stage${left>1?"s":""} to submission.`:`${name} is ready to submit.`}`;
+  return[fact,pickCheer(value===0.5&&!MS_CHEER[stageKey]&&stageKey!=="R&R back"?"Partly done":stageKey)]}
+function cycleStage(id,i){const p=S.papers[id],before=snapshotOf(p),st=stagesOf(p);
+  const prev=st[i];st[i]=st[i]===0?1:st[i]===1?0.5:0;
+  writePaper(id,{stages:st,confirmed:true},500);const undo=()=>restore(id,before);
+  const cell=document.querySelector(`[data-pid="${CSS.escape(id)}"][data-si="${i}"]`);if(cell&&st[i]>prev)cell.classList.add("pop");
+  if(st[i]>prev){const[f,c]=cheerFor(S.papers[id],STAGES[i][0],st[i]);toast(f,undo,c)}
+  else toast(`${STAGES[i][0]} ${st[i]===0.5?"set to partly done":"set back to not started"}.`,undo)}
+function saveSettings(k,v){S.settings[k]=v;render();if(!S.db)return;clearTimeout(timers._s);timers._s=setTimeout(async()=>{try{await S.db.doc("config/settings").set({...S.settings,updatedAt:new Date().toISOString()})}catch(e){toast("Could not save settings")}},600)}
+async function addPaper(folder){
+  if(S.db&&!S.loaded){toast("Still loading your papers, try again in a moment");return}
+  const ids=Object.keys(S.papers).map(k=>parseInt(k.replace(/\D/g,""),10)).filter(n=>!isNaN(n));
+  let n=(ids.length?Math.max(...ids):0)+1,id="P"+String(n).padStart(2,"0");
+  if(S.db){for(let tries=0;tries<5;tries++){try{if(!(await S.db.doc("papers/"+id).get()).exists)break}catch(e){toast("Could not create the paper, reload");return}n++;id="P"+String(n).padStart(2,"0")}}
+  const p={id,title:folder?short(folder):"New paper",venue:"",type:"Journal",role:"",roleByUser:false,lead:"",deadline:"",deadlineType:"None",venueValue:"",weeksLeft:"",waiting:false,stages:Array(13).fill(0),nextAction:"",blocker:"",notes:"",folders:folder?[folder]:[],confirmed:true,archived:false,dismissed:[],milestones:{},createdAt:new Date().toISOString()};
+  S.papers[id]=p;render();openDrawer(id);
+  if(S.db){try{await S.db.doc("papers/"+id).set(p)}catch(e){toast("Could not create the paper")}}}
+
+document.addEventListener("click",e=>{
+  if(e.target.closest&&e.target.closest("#quick25")){if(T&&T.mode==="focus"){toast(T.ended?"Answer the last session first: Finished or Not yet.":"A 25-minute session is already running.");return}
+    const f=layout().focus[0];if(f&&writable(f.p)){const np=nextPiece(f.p);startFocus(f.p.id,np?np.id:"")}else startFocus(null,"");return}
+  const t=e.target.closest("[data-rmfolder],[data-addlink],[data-dellink],[data-usevenue],[data-jreplace],[data-jcancel],[data-openfolder],[data-openlatest],[data-choosefolder],[data-askdelete],[data-dodelete],[data-go],[data-pdone],[data-pdel],[data-padd],[data-pbreak],[data-pstop],[data-tpause],[data-tdone],[data-tmore],[data-tnot],[data-tskip],[data-tnext],[data-tstop],[data-si],[data-ms],[data-roletoggle],[data-roleauto],[data-sdone],[data-sdeadline],[data-sdis],[data-usefolder],[data-restore],[data-open],[data-close],[data-askarchive],[data-archive],[data-cancel],[data-addfolder],[data-ignorefolder],#addPaper,#toggleSettings");
+  if(!t)return;
+  const pid=t.dataset.pid,pp=pid&&S.papers[pid];
+  if(t.dataset.rmfolder){const p=S.papers[t.dataset.rmfolder];if(!p)return;const old=[...(p.folders||[])];
+    writePaper(p.id,{folders:[],confirmed:true,updatedAt:new Date().toISOString()});renderDrawer();
+    toast("Folder removed from this paper. Nothing was deleted on your Mac.",()=>writePaper(p.id,{folders:old,updatedAt:new Date().toISOString()}));return}
+  if(t.dataset.addlink){const p=S.papers[t.dataset.addlink],inp=$("#newLink");if(!p||!inp)return;const raw=inp.value.trim(),m=raw.match(/https?:\/\/[^\s<>"'\u3000-\u303f\uff00-\uffef\u4e00-\u9fff]+/i),u=cleanURL(m?m[0].replace(/[.,;:!?)\]}>'"]+$/,""):raw);
+    if(!u){toast("That is not a link yet. In OneDrive or Google, choose Share, copy the link, and paste it here.");return}
+    if(linksOf(p).some(l=>l.url===u)){toast("That link is already there");return}
+    const before={links:[...(Array.isArray(p.links)?p.links:[])],sharedLink:p.sharedLink||""};
+    writePaper(p.id,{links:[...linksOf(p).map(l=>({url:l.url,label:l.label})),{url:u,label:linkLabel(u)}],sharedLink:"",confirmed:true,updatedAt:new Date().toISOString()});inp.value="";renderDrawer();{const i=$("#newLink");if(i)i.focus()}
+    toast(`${linkLabel(u)} link added`,()=>writePaper(p.id,{...before,updatedAt:new Date().toISOString()}));return}
+  if(t.dataset.dellink){const p=S.papers[t.dataset.dellink];if(!p)return;const before={links:[...(Array.isArray(p.links)?p.links:[])],sharedLink:p.sharedLink||""};
+    writePaper(p.id,{links:linksOf(p).filter(l=>l.url!==t.dataset.url).map(l=>({url:l.url,label:l.label})),sharedLink:"",updatedAt:new Date().toISOString()});renderDrawer();{const i=$("#newLink");if(i)i.focus()}
+    toast("Link removed",()=>writePaper(p.id,{...before,updatedAt:new Date().toISOString()}));return}
+  if(t.dataset.usevenue){const p=S.papers[t.dataset.usevenue],v=S.venues[p&&p.id],j=v&&v.top3&&v.top3[+t.dataset.vi];if(!p||!j)return;const before={venue:p.venue||"",venueValue:p.venueValue||""};
+    writePaper(p.id,{venue:titleCase(j.title),venueValue:"3",confirmed:true});toast(`Target set to ${titleCase(j.title)}`,()=>writePaper(p.id,before));return}
+  if(t.dataset.jcancel!==undefined){pendingList=null;$("#jconfirm").textContent="";$("#jfile").value="";return}
+  if(t.dataset.jreplace!==undefined&&pendingList&&S.db){const old=S.journals,L=pendingList;pendingList=null;
+    (async()=>{try{if(old&&old.titles)await S.db.doc("journals/list-"+(old.year||"old")).set({...old,archivedAt:new Date().toISOString()});
+      await S.db.doc("journals/list").set({year:L.year,source:L.source,titles:L.titles,updatedAt:new Date().toISOString()});
+      $("#jconfirm").textContent=`Done. ${L.titles.length} journals for ${L.year}. Re-check the journal suggestions against it.`}catch(e){$("#jconfirm").textContent="Could not save the list, try again."}})();return}
+  if(t.dataset.openfolder){const p=S.papers[t.dataset.openfolder],mf=p&&mainFolder(p);if(!mf){openDrawer(t.dataset.openfolder);toast("No folder yet. Choose one in the details.");return}
+    if(S.local){finderCall("open",{id:p.id,what:"folder"}).then(r=>toast(r&&r.ok?"Opening the folder in Finder":"That folder was not found. Change it in the details."));return}
+    const done=()=>toast("Folder path copied. In Finder press ⌘⇧G and paste.");
+    try{navigator.clipboard.writeText(mf).then(done,()=>toast(mf))}catch(_){toast(mf)}return}
+  if(t.dataset.openlatest){finderCall("open",{id:t.dataset.openlatest,what:"latest"}).then(r=>toast(r&&r.ok?"Opening the latest version":"The latest version was not found. The next folder read will update it."));return}
+  if(t.dataset.choosefolder){const id=t.dataset.choosefolder,old=[...((S.papers[id]||{}).folders||[])];toast("Choose the folder in the window that just opened");
+    finderCall("choose-folder",{id}).then(r=>{if(r&&r.ok&&r.folders){S.papers[id].folders=r.folders;render();toast(`Folder set to ${short(r.folders[0])}. Reading it now.`,()=>writePaper(id,{folders:old,updatedAt:new Date().toISOString()}))}else toast("No folder chosen")});return}
+  if(t.dataset.go!==undefined&&t.dataset.go){if(T&&T.mode==="focus"&&T.ended){toast("Answer the last session first: Finished or Not yet.");return}
+    if(T&&T.mode==="focus"&&!T.ended){toast(T.pid===t.dataset.go&&T.pieceId===t.dataset.piece?"This piece is already running.":"A 25-minute piece is already running. Stop it first.");return}startFocus(t.dataset.go,t.dataset.piece);return}
+  if(t.dataset.tpause!==undefined&&T){if(T.paused){T.endAt=Date.now()+T.left;T.paused=false}else{T.left=remaining();T.paused=true}saveT();renderTimer();return}
+  if(t.dataset.tdone!==undefined&&T){finishPiece(true);return}
+  if(t.dataset.tnot!==undefined&&T){finishPiece(false);return}
+  if(t.dataset.tmore!==undefined&&T){T.ended=false;T.len=5*60e3;T.endAt=Date.now()+T.len;saveT();renderTimer();return}
+  if(t.dataset.tskip!==undefined&&T){T.ended=true;saveT();renderTimer();return}
+  if(t.dataset.tnext!==undefined&&T){const p=T.pid&&S.papers[T.pid],np=p&&nextPiece(p);startFocus(p?p.id:null,np?np.id:"");return}
+  if(t.dataset.tstop!==undefined){const prev=T?{...T,left:remaining(),paused:!T.ended}:null;stopTimer();if(prev&&!prev.ended)toast("Timer stopped",()=>{T=prev;saveT();renderTimer();render()});return}
+  if(t.dataset.pdone&&pp){const id=t.dataset.pdone,old=piecesOf(pp).find(x=>x.id===id);if(!old)return;const list=piecesOf(pp).map(x=>x.id===id?{...x,done:!x.done,doneAt:!x.done?todayISO():""}:x);writePlan(pid,list);renderDrawer();
+    const back=()=>writePlan(pid,piecesOf(S.papers[pid]).map(x=>x.id===id?old:x));if(!old.done)toast("Piece done.",back,pickCheer("Partly done"));else toast("Piece marked not done.",back);return}
+  if(t.dataset.pdel&&pp){const all=piecesOf(pp),idx=all.findIndex(x=>x.id===t.dataset.pdel),gone=all[idx];if(!gone)return;writePlan(pid,all.filter(x=>x.id!==gone.id));
+    toast("Piece removed",()=>{const cur=piecesOf(S.papers[pid]);if(!cur.some(x=>x.id===gone.id)){cur.splice(Math.min(idx,cur.length),0,gone);writePlan(pid,cur)}});return}
+  if(t.dataset.padd){const p=S.papers[t.dataset.padd],inp=$("#newPiece"),v=inp&&inp.value.trim();if(!p||!v){toast("Write the piece first");return}
+    const i=stagesOf(p).findIndex(x=>x<1);const nid=newId();writePlan(p.id,[...piecesOf(p),{id:nid,text:v.slice(0,140),stage:i<0?null:i,done:false,by:"me"}]);inp.value="";renderDrawer();toast("Piece added",()=>writePlan(p.id,piecesOf(S.papers[p.id]).filter(x=>x.id!==nid)));return}
+  if(t.dataset.pbreak){breakDown(t.dataset.pbreak);return}
+  if(t.dataset.pstop!==undefined){if(breakCtl)breakCtl.abort();return}
+  if(t.dataset.si!==undefined&&pp){cycleStage(pid,+t.dataset.si);return}
+  if(t.dataset.ms&&pp){const before=snapshotOf(pp),k=t.dataset.ms;writePaper(pid,{...applyMilestone(pp,k),confirmed:true});
+    const[f,c]=cheerFor(S.papers[pid],MS_CHEER[k],1);toast(f,()=>restore(pid,before),c);return}
+  if(t.dataset.roletoggle){const id=t.dataset.roletoggle,p=S.papers[id];if(!p)return;const r=role(p),before={userRole:p.userRole??"",roleByUser:!!p.roleByUser};
+    writePaper(id,{userRole:r.main?"Co-author":"Lead",roleByUser:true,confirmed:true});
+    toast(`${shortName(p)}: now ${r.main?"co-author":"main author"}`,()=>writePaper(id,before));return}
+  if(t.dataset.roleauto){const p=S.papers[t.dataset.roleauto];if(!p)return;const before={userRole:p.userRole??"",roleByUser:!!p.roleByUser};writePaper(p.id,{roleByUser:false});toast("Using the detected role",()=>writePaper(p.id,before));return}
+  if(t.dataset.sdeadline&&pp){const s=pendingDeadline(pp);if(!s)return;const before={deadline:pp.deadline||"",deadlineType:pp.deadlineType||"None",dismissed:[...(pp.dismissed||[])]};
+    writePaper(pid,{deadline:s.value,deadlineType:s.deadlineType||"Hard",dismissed:[...(pp.dismissed||[]),s.key],confirmed:true});toast(`Deadline set to ${fmtDate(s.value)}`,()=>writePaper(pid,before));return}
+  if(t.dataset.sdone&&pp){const key=t.dataset.sdone,kind=t.dataset.kind||"done",s=pendingSuggestions(pp).find(x=>x.key===key);if(!s)return;const before=snapshotOf(pp);
+    const dis=[...(pp.dismissed||[]),s.key];
+    if(MS_CHEER[kind]){writePaper(pid,{...applyMilestone(pp,kind),dismissed:dis,confirmed:true});const[f,c]=cheerFor(S.papers[pid],MS_CHEER[kind],1);toast(f,()=>restore(pid,before),c);return}
+    const st=stagesOf(pp),v=kind==="part"?0.5:1;st[s.stage]=Math.max(st[s.stage],v);
+    writePaper(pid,{stages:st,dismissed:dis,confirmed:true});const[f,c]=cheerFor(S.papers[pid],STAGES[s.stage][0],v);toast(f,()=>restore(pid,before),c);return}
+  if(t.dataset.sdis&&pp){const before=snapshotOf(pp);writePaper(pid,{dismissed:[...(pp.dismissed||[]),t.dataset.sdis]});toast("Hidden",()=>restore(pid,before));return}
+  if(t.dataset.usefolder&&S.open){const p=S.papers[S.open],old=[...(p.folders||[])];writePaper(p.id,{folders:[t.dataset.usefolder,...old.filter(f=>f!==t.dataset.usefolder)],confirmed:true});toast("Folder added. The next folder read will use it.",()=>writePaper(p.id,{folders:old}));return}
+  if(t.dataset.restore){writePaper(t.dataset.restore,{archived:false});toast("Restored");return}
+  if(t.dataset.open){openDrawer(t.dataset.open);return}
+  if(t.dataset.close!==undefined){closeDrawer();return}
+  if(t.id==="addPaper"){addPaper();return}
+  if(t.id==="toggleSettings"){const b=$("#settingsBox");b.hidden=!b.hidden;if(!b.hidden)renderSettings();return}
+  const p=S.papers[S.open];
+  if(t.dataset.askarchive!==undefined){$("#archiveBox").innerHTML=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px">Archive? It moves to the Archived list at the bottom. <button class="btn primary" data-archive="1">Archive</button><button class="btn" data-cancel>Cancel</button></div>`;return}
+  if(t.dataset.cancel!==undefined){renderDrawer();return}
+  if(t.dataset.askdelete!==undefined&&p){$("#archiveBox").innerHTML=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px">Delete <b>${esc(p.id)} ${esc((p.title||"").slice(0,50))}</b>? It disappears from every view. <button class="btn primary" style="background:var(--warn);border-color:var(--warn)" data-dodelete>Delete</button><button class="btn" data-cancel>Cancel</button></div>`;return}
+  if(t.dataset.dodelete!==undefined&&p){const id=p.id,name=(p.title||id).slice(0,40);writePaper(id,{deleted:true,deletedAt:new Date().toISOString()});closeDrawer();
+    toast(`Deleted ${name}`,()=>writePaper(id,{deleted:false,deletedAt:""}));return}
+  if(t.dataset.archive&&p){const id=p.id;writePaper(id,{archived:true});closeDrawer();toast("Archived",()=>writePaper(id,{archived:false}));return}
+  if(t.dataset.addfolder){addPaper(t.dataset.addfolder);return}
+  if(t.dataset.ignorefolder){saveSettings("ignoredFolders",[...(S.settings.ignoredFolders||[]),t.dataset.ignorefolder]);return}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&D){endDrag(false);return}if(e.key==="Escape"&&S.open)closeDrawer();
+  if(e.target&&e.target.dataset&&e.target.dataset.grip&&(e.key==="ArrowUp"||e.key==="ArrowDown")){e.preventDefault();moveByKey(e.target.dataset.grip,e.key==="ArrowUp"?-1:1);return}
+  if(e.key==="Enter"&&e.target&&e.target.id==="newLink"){e.preventDefault();const b=document.querySelector("[data-addlink]");if(b)b.click();return}
+  if(e.key==="Enter"&&e.target&&e.target.id==="newPiece"){e.preventDefault();const b=document.querySelector("[data-padd]");if(b)b.click()}});
+
+/* ---------- ask Claude to break the current stage down (viewer's own usage, on click only) ---------- */
+let breakCtl=null;
+async function breakDown(pid){const p=S.papers[pid];if(!p||!S.sample||S.breaking)return;const cx=S.ctx[pid]||{},sc=S.scans[pid]||{},st=stagesOf(p);
+  const i=st.findIndex(x=>x<1),stage=status(p)==="revising"?"Revision (R&R)":i<0?"Final checks before submission":STAGES[Math.min(i,SUB)][0];
+  const open=piecesOf(p).filter(x=>!x.done).map(x=>"- "+x.text).join("\n")||"(none)";
+  const prompt=`You help a busy researcher break paper writing into pieces they can FINISH in one 25-minute focus session.
+Paper: ${p.title}
+Current stage: ${stage}
+Stages already done: ${STAGES.filter((s,k)=>st[k]===1).map(s=>s[0]).join(", ")||"none"}
+What the files show: ${[cx.about,cx.statusEvidence,cx.latestVersion?("Latest version "+cx.latestVersion):"",sc.manuscript&&sc.manuscript.note||""].filter(Boolean).join(" ").slice(0,1500)}
+Their next action note: ${p.nextAction||"(none)"}
+Pieces they already have (do not repeat):
+${open}
+
+Give 5 to 8 NEW pieces for the current stage, in the order to do them. Rules: each piece is one action with a visible result, fits 25 minutes, starts with a concrete verb, max 90 characters, never "work on" or "finish". Pieces are tasks for the writer, not offers to write text.
+Reply with only a JSON array of strings.`;
+  breakCtl=new AbortController();S.breaking=pid;S.breakMsg="";if(S.open)renderDrawer();
+  try{const out=await S.sample.json(prompt,{signal:breakCtl.signal,cache:false});
+    const items=(Array.isArray(out)?out:[]).map(x=>String(typeof x==="string"?x:(x&&x.text)||"").trim()).filter(x=>x&&x.length<=140).slice(0,8);
+    if(!items.length)throw{code:"empty_completion"};
+    const k=i<0?null:Math.min(i,SUB),kk=status(p)==="revising"?REV:k,added=items.map(t=>({id:newId(),text:t,stage:kk,done:false,by:"claude"})),ids=new Set(added.map(x=>x.id));
+    writePlan(pid,[...piecesOf(S.papers[pid]),...added]);
+    toast(`${items.length} pieces added`,()=>writePlan(pid,piecesOf(S.papers[pid]).filter(x=>!ids.has(x.id))))}
+  catch(e){const c=e&&e.code;
+    if(c==="not_granted"||c==="sampling_disabled"||c==="not_declared"||c==="capability_disabled"||c==="capability_removed")S.sample=null;
+    else S.breakMsg=c==="cancelled"?"":c==="rate_limited"?"Too many requests right now. Try again later.":"Could not break it down this time. Try again."}
+  finally{S.breaking=null;if(S.open)renderDrawer()}}
+document.addEventListener("input",e=>{const t=e.target,p=S.papers[S.open];
+  if(t.dataset.coach!==undefined){const[k,m]=coach(t.value),c=$("#coachLine");if(c){c.className="coach "+k;c.textContent=m}return}
+  if(t.dataset.f&&p){let v=t.value;if(t.dataset.f==="weeksLeft")v=v===""?"":Number(v);writePaper(p.id,{[t.dataset.f]:v,confirmed:true},800)}
+  if(t.dataset.folders!==undefined&&p)writePaper(p.id,{folders:t.value.split("\n").map(s=>s.replace(/\r/g,"")).filter(s=>s.trim())},1000);
+  if(t.dataset.msdate&&p&&t.value)writePaper(p.id,{milestones:{...(p.milestones||{}),[t.dataset.msdate]:t.value}},800);
+  if(t.dataset.setting){const v=Number(t.value);if(t.value!==""&&!isNaN(v))saveSettings(t.dataset.setting,v)}});
+let pendingList=null;
+document.addEventListener("change",async e=>{if(e.target&&e.target.id==="jfile"&&e.target.files&&e.target.files[0]){const f=e.target.files[0],box=$("#jconfirm");box.textContent="Reading the file…";
+    try{const L=await readJournalFile(f);if(L.titles.length<50)throw new Error("few");pendingList=L;
+      box.innerHTML=`<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px">Replace the ${esc(S.journals?S.journals.year:"")} list (${S.journals&&S.journals.titles?S.journals.titles.length:0}) with ${esc(L.year)} (${L.titles.length} journals)? The old list is kept. <button class="btn primary" data-jreplace>Replace</button><button class="btn" data-jcancel>Cancel</button></div>`}
+    catch(err){box.textContent=S.local&&!window.XLSX?"Excel files can only be read in the online version. Use a .csv file here, or replace the list online.":"Could not read a journal list from that file. It needs a column named Journal Title."}}});
+document.addEventListener("change",e=>{const t=e.target,p=S.papers[S.open];
+  if(t.dataset.fb&&p){writePaper(p.id,{[t.dataset.fb]:t.checked,confirmed:true,updatedAt:new Date().toISOString()});if(t.dataset.fb==="onlineCollab")setTimeout(renderDrawer,0)}});
+
+/* ---------- offline copy on this Mac: a local store with the same calls the page uses ---------- */
+function localDB(){const api="/api";const kick=new Set();
+  const q=s=>encodeURIComponent(s);
+  async function jget(u){const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw{code:"unavailable"};return r.json()}
+  async function write(c,id,op,data){const r=await fetch(`${api}/d/${q(c)}/${q(id)}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op,data:data||null})});
+    if(!r.ok){let e={};try{e=await r.json()}catch(_){}throw{code:e.code||"unavailable"}}kick.forEach(f=>f())}
+  const snapDoc=(id,d)=>({id,exists:!!d.exists,data:()=>d.data||undefined,metadata:{fromCache:false,hasPendingWrites:false}});
+  function watch(run){run();const t=setInterval(run,4000);kick.add(run);return()=>{clearInterval(t);kick.delete(run)}}
+  const doc=(c,id)=>({id,path:c+"/"+id,get:async()=>snapDoc(id,await jget(`${api}/d/${q(c)}/${q(id)}`)),set:d=>write(c,id,"set",d),update:d=>write(c,id,"update",d),delete:()=>write(c,id,"delete"),
+    onSnapshot(next){let last=null;return watch(async()=>{try{const d=await jget(`${api}/d/${q(c)}/${q(id)}`),k=JSON.stringify(d);if(k!==last){last=k;next(snapDoc(id,d))}}catch(e){}})}});
+  return{doc(path){const i=path.indexOf("/");return doc(path.slice(0,i),path.slice(i+1))},
+    collection(c){return{doc:id=>doc(c,id),onSnapshot(next){let last=null;return watch(async()=>{try{const r=await jget(`${api}/c/${q(c)}`),k=JSON.stringify(r.docs);if(k!==last){last=k;next({docs:r.docs.map(d=>snapDoc(d.id,{exists:true,data:d.data})),size:r.docs.length,empty:!r.docs.length,metadata:{fromCache:false,hasPendingWrites:false},docChanges:()=>[]})}}catch(e){}})}}}}}
+
+async function finderCall(what,body){try{const r=await fetch("/api/"+what,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});return await r.json()}catch(e){return null}}
+
+/* ---------- boot ---------- */
+loadT();render();renderTimer();
+(async()=>{try{const sm=await(window.claude&&window.claude.use?window.claude.use("sample"):null);if(sm){S.sample=sm;if(S.open)renderDrawer()}}catch(e){}})();
+(async()=>{
+  let db=await(window.claude&&window.claude.use?window.claude.use("db"):Promise.resolve(null));
+  if(!db&&/^(127\.0\.0\.1|localhost)$/.test(location.hostname)){db=localDB();S.local=true;try{S.cfg=await (await fetch("/api/config",{cache:"no-store"})).json()}catch(e){S.cfg={}}}
+  if(!db){render();return}
+  S.db=db;render();
+  db.collection("papers").onSnapshot(snap=>{const m={};snap.docs.forEach(d=>{m[d.id]={...d.data(),id:d.id}});
+    Object.keys(pending).forEach(k=>{if(m[k])Object.assign(m[k],pending[k])});
+    S.papers=m;S.loaded=true;render()},()=>toast("Lost connection to your papers, reload the page"));
+  db.collection("scan").onSnapshot(snap=>{const m={};snap.docs.forEach(d=>{const v=d.data();if(d.id==="_run")S.run=v;else if(d.id==="_new")S.newFolders=Array.isArray(v.folders)?v.folders:[];else m[d.id]=v});S.scans=m;render()},()=>{});
+  db.collection("plan").onSnapshot(snap=>{const m={};snap.docs.forEach(d=>{m[d.id]=d.data()});
+    Object.keys(S.plans).forEach(k=>{if(timers["pl_"+k]&&S.plans[k])m[k]=S.plans[k]});S.plans=m;render();if(T)renderTimer()},()=>{});
+  watchFocus();
+  db.doc("journals/list").onSnapshot(d=>{S.journals=d.exists?d.data():null;if(!$("#settingsBox").hidden&&!pendingList)renderSettings();if(S.open)renderDrawer()},()=>{});
+  db.collection("venues").onSnapshot(snap=>{const m={};snap.docs.forEach(d=>{m[d.id]=d.data()});S.venues=m;if(S.open)renderDrawer()},()=>{});
+  db.collection("context").onSnapshot(snap=>{const m={};snap.docs.forEach(d=>{m[d.id]=d.data()});S.ctx=m;render()},()=>{});
+  db.doc("config/settings").onSnapshot(d=>{if(d.exists){S.settings={...DEFAULTS,...d.data()};const a=document.activeElement;if(!(a&&a.dataset&&a.dataset.setting)&&!$("#settingsBox").hidden)renderSettings();render()}},()=>{});
+})();
+</script>

@@ -1,0 +1,38 @@
+{
+ "id": "P03",
+ "title": "Example: Co-authored survey study",
+ "type": "Journal",
+ "venue": "",
+ "userRole": "Co-author",
+ "roleByUser": true,
+ "stages": [
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  0,
+  0
+ ],
+ "milestones": {
+  "submitted": "2026-01-01"
+ },
+ "folders": [],
+ "links": [],
+ "order": 3,
+ "confirmed": true,
+ "archived": false,
+ "deleted": false,
+ "dismissed": [],
+ "waiting": false,
+ "deadline": "",
+ "deadlineType": "None",
+ "updatedAt": "2026-01-01T00:00:00.000Z",
+ "createdAt": "2026-01-01T00:00:00.000Z"
+}

@@ -1,0 +1,39 @@
+{
+ "id": "P02",
+ "title": "Example: Systematic review of feedback literacy",
+ "type": "Journal",
+ "venue": "",
+ "stages": [
+  1,
+  1,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0,
+  0
+ ],
+ "nextAction": "Finish screening titles",
+ "folders": [],
+ "links": [
+  {
+   "url": "https://docs.google.com/document/d/example",
+   "label": "Google Doc"
+  }
+ ],
+ "order": 2,
+ "confirmed": true,
+ "archived": false,
+ "deleted": false,
+ "dismissed": [],
+ "waiting": false,
+ "deadline": "",
+ "deadlineType": "None",
+ "updatedAt": "2026-01-01T00:00:00.000Z",
+ "createdAt": "2026-01-01T00:00:00.000Z"
+}

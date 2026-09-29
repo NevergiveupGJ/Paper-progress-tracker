@@ -1,0 +1,10 @@
+data/
+backups/
+out/
+state/
+upload/
+server.log
+config.json
+app/index.html
+__pycache__/
+.DS_Store
