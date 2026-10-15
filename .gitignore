@@ -1,10 +1,25 @@
+# Your own things. They stay on your computer and are never committed.
 data/
 backups/
+local/
+config.json
+
+# Logs
+server.log
+*.log
+
+# Built from app/source.html on every start
+app/index.html
+app/.index-*.tmp
+
+# Folders from earlier versions
 out/
 state/
 upload/
-server.log
-config.json
-app/index.html
+
+# Python and system files
 __pycache__/
+*.pyc
 .DS_Store
+Thumbs.db
+desktop.ini

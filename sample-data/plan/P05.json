@@ -1,0 +1,29 @@
+{
+ "pieces": [
+  {
+   "id": "s05a",
+   "text": "Summarise five studies on after-school clubs in a table",
+   "stage": null,
+   "sk": "Lr",
+   "done": false,
+   "by": "me"
+  },
+  {
+   "id": "s05b",
+   "text": "Draft the significance paragraph, 200 words",
+   "stage": null,
+   "sk": "Bg",
+   "done": false,
+   "by": "me"
+  },
+  {
+   "id": "s05c",
+   "text": "Email the research office for the budget template",
+   "stage": null,
+   "sk": "Bu",
+   "done": false,
+   "by": "me"
+  }
+ ],
+ "updatedAt": "2026-01-01T00:00:00.000Z"
+}

@@ -1,14 +1,30 @@
 {
  "id": "P02",
- "title": "Example: Systematic review of feedback literacy",
+ "title": "Citizen science apps and ecology learning: a systematic review",
+ "venue": "Example Review of Science Education",
  "type": "Journal",
- "venue": "",
+ "outline": "review",
+ "role": "Lead",
+ "roleByUser": false,
+ "userRole": "",
+ "lead": "",
+ "deadline": "",
+ "deadlineType": "None",
+ "venueValue": "",
+ "weeksLeft": "",
+ "waiting": false,
+ "st": {
+  "In": 0.5,
+  "Pt": 1,
+  "Se": 1,
+  "Sc": 0.5
+ },
  "stages": [
   1,
   1,
+  0.5,
   0,
-  0,
-  0,
+  0.5,
   0,
   0,
   0,
@@ -18,7 +34,9 @@
   0,
   0
  ],
- "nextAction": "Finish screening titles",
+ "nextAction": "Screen the next 50 titles",
+ "blocker": "",
+ "notes": "",
  "folders": [],
  "links": [
   {
@@ -31,9 +49,8 @@
  "archived": false,
  "deleted": false,
  "dismissed": [],
- "waiting": false,
- "deadline": "",
- "deadlineType": "None",
- "updatedAt": "2026-01-01T00:00:00.000Z",
- "createdAt": "2026-01-01T00:00:00.000Z"
+ "milestones": {},
+ "onlineCollab": false,
+ "createdAt": "2026-01-01T00:00:00.000Z",
+ "updatedAt": "2026-01-01T00:00:00.000Z"
 }

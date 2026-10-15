@@ -1,0 +1,18 @@
+{
+ "about": "How teachers ask questions in live online science lessons, from 40 recorded lessons and a survey.",
+ "authors": [
+  "Joe Bloggs",
+  "Juan Pérez",
+  "Jane Doe",
+  "Taro Yamada"
+ ],
+ "yourPosition": "3rd of 4",
+ "corresponding": false,
+ "venue": "Example Journal of Online Learning",
+ "statusEvidence": "Submitted on 21 Jul 2026. Waiting for the reviews.",
+ "sources": [
+  "sample data"
+ ],
+ "checkedAt": "2026-01-01T00:00:00.000Z",
+ "updatedAt": "2026-01-01T00:00:00.000Z"
+}

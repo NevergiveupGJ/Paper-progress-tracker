@@ -1,0 +1,29 @@
+{
+ "pieces": [
+  {
+   "id": "s03a",
+   "text": "Write the opening claim of the second argument in three sentences",
+   "stage": null,
+   "sk": "A2",
+   "done": false,
+   "by": "me"
+  },
+  {
+   "id": "s03b",
+   "text": "Find two classroom examples for the second argument",
+   "stage": null,
+   "sk": "A2",
+   "done": false,
+   "by": "me"
+  },
+  {
+   "id": "s03c",
+   "text": "Outline the third argument in five bullet points",
+   "stage": null,
+   "sk": "A3",
+   "done": false,
+   "by": "me"
+  }
+ ],
+ "updatedAt": "2026-01-01T00:00:00.000Z"
+}

@@ -1,26 +1,48 @@
 {
  "pieces": [
   {
-   "id": "e1",
-   "text": "List the 3 main findings as bullet points",
-   "stage": 3,
+   "id": "s01a",
+   "text": "Write the participants paragraph from the recruitment log",
+   "stage": null,
+   "sk": "Pa",
+   "done": true,
+   "by": "me",
+   "doneAt": "2026-09-30"
+  },
+  {
+   "id": "s01b",
+   "text": "Draft 150 words on the gap the sleep studies leave open",
+   "stage": null,
+   "sk": "Lr",
    "done": false,
    "by": "me"
   },
   {
-   "id": "e2",
-   "text": "Make Table 2 from the analysis output",
-   "stage": 3,
+   "id": "s01c",
+   "text": "Run the regression of exam score on sleep midpoint",
+   "stage": null,
+   "sk": "An",
    "done": false,
    "by": "me"
   },
   {
-   "id": "e3",
-   "text": "Draft 150 words describing the sample",
-   "stage": 5,
+   "id": "s01d",
+   "text": "Make Table 2 with the descriptive results",
+   "stage": null,
+   "sk": "De",
+   "done": false,
+   "by": "me"
+  },
+  {
+   "id": "s01e",
+   "text": "List the three main findings as bullet points",
+   "stage": null,
+   "sk": "Re",
    "done": false,
    "by": "me"
   }
  ],
+ "unitsToSubmission": 30,
+ "unitsReason": "an example estimate",
  "updatedAt": "2026-01-01T00:00:00.000Z"
 }

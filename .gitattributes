@@ -1,2 +1,25 @@
-# Auto detect text files and perform LF normalization
+# Git stores text files with LF line endings. These rules decide the line
+# endings you get in a checkout and in the Download ZIP from GitHub, so each
+# start file works on its own system.
 * text=auto
+
+# Windows batch files need CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Mac and Linux scripts break with CRLF.
+*.command text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+
+*.html text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+
+*.png binary
+*.jpg binary
+*.ico binary
+*.zip binary
+
+# The executable bit of start.command, stop.command, start-linux.sh and
+# stop-linux.sh is kept by git itself (file mode 100755), not by this file.

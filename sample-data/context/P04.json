@@ -1,0 +1,16 @@
+{
+ "about": "A short editorial that introduces six articles on outdoor science learning.",
+ "authors": [
+  "Jane Doe",
+  "Erika Mustermann"
+ ],
+ "yourPosition": "1st of 2",
+ "corresponding": true,
+ "venue": "Example Review of Science Education",
+ "statusEvidence": "First draft half written. The co-editor comments next.",
+ "sources": [
+  "sample data"
+ ],
+ "checkedAt": "2026-01-01T00:00:00.000Z",
+ "updatedAt": "2026-01-01T00:00:00.000Z"
+}

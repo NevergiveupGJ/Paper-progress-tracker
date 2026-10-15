@@ -1,0 +1,56 @@
+{
+ "id": "P06",
+ "title": "Teacher questions in online science lessons: a mixed-methods study",
+ "venue": "Example Journal of Online Learning",
+ "type": "Journal",
+ "outline": "empirical",
+ "role": "Co-author",
+ "roleByUser": true,
+ "userRole": "Co-author",
+ "lead": "",
+ "deadline": "",
+ "deadlineType": "None",
+ "venueValue": "",
+ "weeksLeft": "",
+ "waiting": false,
+ "st": {
+  "Cs": 1,
+  "Su": 1
+ },
+ "stages": [
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  1,
+  0,
+  0
+ ],
+ "nextAction": "",
+ "blocker": "",
+ "notes": "",
+ "folders": [],
+ "links": [
+  {
+   "url": "https://www.overleaf.com/project/example",
+   "label": "Overleaf"
+  }
+ ],
+ "order": 6,
+ "confirmed": true,
+ "archived": false,
+ "deleted": false,
+ "dismissed": [],
+ "milestones": {
+  "submitted": "2026-07-21"
+ },
+ "onlineCollab": true,
+ "createdAt": "2026-01-01T00:00:00.000Z",
+ "updatedAt": "2026-01-01T00:00:00.000Z"
+}

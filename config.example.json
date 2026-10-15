@@ -1,8 +1,8 @@
 {
-  "names": [
-    "Jane Doe"
-  ],
+  "names": ["Jane Doe"],
   "papersRoot": "~/Documents/Papers",
+  "port": 47285,
+  "scanEveryHours": 6,
   "journalListName": "journal list",
   "onlineUrl": ""
 }
